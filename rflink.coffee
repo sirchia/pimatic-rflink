@@ -6,10 +6,9 @@ module.exports = (env) ->
   # Require the [cassert library](https://github.com/rhoot/cassert).
   assert = env.require 'cassert'
   _ = env.require('lodash')
-  homeduino = require('homeduino')
   M = env.matcher
 
-  Board = homeduino.Board
+  Board = rflink.Board
 
   class HomeduinoPlugin extends env.plugins.Plugin
 
@@ -44,7 +43,7 @@ module.exports = (env) ->
       @pendingConnect = new Promise( (resolve, reject) =>
         @framework.on "after init", ( =>
           @board.connect(@config.connectionTimeout).then( =>
-            env.logger.info("Connected to homeduino device.")
+            env.logger.info("Connected to rflink device.")
 
             if @config.enableDSTSensors
               @board.readDstSensors(@config.dstSearchAddressPin).then( (ret) -> 
@@ -64,7 +63,7 @@ module.exports = (env) ->
               )
             return
           ).then(resolve).catch( (err) =>
-            env.logger.error("Couldn't connect to homeduino device: #{err.message}.")
+            env.logger.error("Couldn't connect to rflink device: #{err.message}.")
             env.logger.error(err.stack)
             reject(err)
           )
@@ -152,9 +151,9 @@ module.exports = (env) ->
 
       if @config.apikey? and @config.apikey.length > 0
         @framework.userManager.addAllowPublicAccessCallback( (req) =>
-          return req.url.match(/^\/homeduino\/received.*$/)?
+          return req.url.match(/^\/rflink\/received.*$/)?
         )
-        app.get('/homeduino/received', (req, res) =>
+        app.get('/rflink/received', (req, res) =>
           if req.query.apikey isnt @config.apikey
             res.end('Invalid apikey')
             return

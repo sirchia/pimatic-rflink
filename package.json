@@ -1,28 +1,29 @@
 {
-  "name": "pimatic-homeduino",
-  "description": "pimatic plugin to use various 433 MHz devices, sensors and more with an Arduino.",
-  "author": "Oliver Schneider <oliverschneider89+sweetpi@gmail.com> (http://www.sweetpi.de)",
-  "main": "homeduino",
+  "name": "pimatic-rflink",
+  "description": "pimatic plugin to use various 433 MHz devices, sensors and more with an RFLink gateway.",
+  "author": "Riccardo Sirchia <sirchia.r@gmail.com>",
+  "main": "rflink",
   "files": [
-    "homeduino.coffee",
+    "rflink.coffee",
     "README.md",
-    "homeduino-config-schema.coffee",
+    "rflink-config-schema.coffee",
     "device-config-schema.coffee"
   ],
-  "version": "0.8.66",
+  "version": "0.0.1",
   "homepage": "http://pimatic.org",
   "repository": {
     "type": "git",
-    "url": "git://github.com/pimatic/pimatic-homeduino.git"
+    "url": "git://github.com/sirchia/pimatic-rflink.git"
   },
-  "configSchema": "homeduino-config-schema.coffee",
+  "configSchema": "rflink-config-schema.coffee",
   "dependencies": {
-    "homeduino": "~0.0.49"
+    "bluebird": "~2.9.14",
+    "serialport": "~2.0.6"
   },
   "peerDependencies": {
     "pimatic": "0.8.*"
   },
-  "engines": {
+    "engines": {
     "node": ">0.8.x",
     "npm": ">1.1.x"
   }

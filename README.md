@@ -1,8 +1,8 @@
-pimatic-homeduino
+pimatic-rflink
 =======================
 
 Plugin for using various 433 Mhz devices and sensors with a connected Arduino with 
-[homeduino](https://github.com/pimatic/homeduino) sketch or directly with capable hardware like the Raspberry Pi.
+[rflink](https://github.com/pimatic/rflink) sketch or directly with capable hardware like the Raspberry Pi.
 
 This plugins supports all 433 MHz devices with [rfcontroljs](https://github.com/pimatic/rfcontroljs) 
 [protocol implementations](https://github.com/pimatic/rfcontroljs/blob/master/protocols.md).
@@ -13,20 +13,20 @@ Drivers
 
 The plugin can be used with two different hardware combinations:
 
-*  A. Computer with connected Arduino (with homeduino sketch) and 433 MHz transmitter and receiver (recommended)
+*  A. Computer with connected Arduino (with rflink sketch) and 433 MHz transmitter and receiver (recommended)
 *  B. Raspberry Pi (or Banana Pi or Hummingboard) with 433 MHz transmitter and receiver
 
 
 ### A.Connected Arduino (recommended)
 
-![Hardware](https://raw.githubusercontent.com/pimatic/pimatic-homeduino/master/hardware.jpg)  
+![Hardware](https://raw.githubusercontent.com/pimatic/pimatic-rflink/master/hardware.jpg)
 
 -------------
 You can load the plugin by editing your `config.json` to include:
 
 ```json
 {
-  "plugin": "homeduino",
+  "plugin": "rflink",
   "driver": "serialport",
   "driverOptions": {
     "serialDevice": "/dev/ttyUSB0",
@@ -38,12 +38,12 @@ You can load the plugin by editing your `config.json` to include:
 }
 ```
 
-in the `plugins` section. For all configuration options see [homeduino-config-schema](homeduino-config-schema.coffee)
+in the `plugins` section. For all configuration options see [rflink-config-schema](rflink-config-schema.coffee)
 
 The pin numbers are Arduino pin numbers. The `receiverPin` must be either `0` (INT0) or `1` (INT1).
 The `transmitterPin` must be a digital pin between `2` (D2) and `13` (D13).
 
-![nano-pins](https://raw.githubusercontent.com/pimatic/pimatic-homeduino/master/pins-nano.png)
+![nano-pins](https://raw.githubusercontent.com/pimatic/pimatic-rflink/master/pins-nano.png)
 
 
 ### B. Raspberry Pi with ATTiny45 / 85 Prefilter
@@ -52,7 +52,7 @@ You can load the plugin by editing your `config.json` to include:
 
 ```json
 {
-  "plugin": "homeduino",
+  "plugin": "rflink",
   "driver": "gpio",
   "driverOptions": {},
   "receiverPin": 0,
@@ -60,7 +60,7 @@ You can load the plugin by editing your `config.json` to include:
 }
 ```
 
-in the `plugins` section. For all configuration options see [homeduino-config-schema](homeduino-config-schema.coffee)
+in the `plugins` section. For all configuration options see [rflink-config-schema](rflink-config-schema.coffee)
 
 The pin numbers are [wiringPi pin numbers](http://wiringpi.com/pins/).
 
@@ -170,7 +170,7 @@ is used for sending or receiving. Default is `true` for both.
 
 ```json
 {
-  "id": "homeduino-temperature",
+  "id": "rflink-temperature",
   "name": "DHT",
   "class": "HomeduinoDHTSensor",
   "type": 22,
@@ -182,7 +182,7 @@ is used for sending or receiving. Default is `true` for both.
 
 ```json
 {
-  "id": "homeduino-temperature-dst",
+  "id": "rflink-temperature-dst",
   "name": "DST",
   "class": "HomeduinoDSTSensor",
   "pin": 12,
@@ -195,7 +195,7 @@ is used for sending or receiving. Default is `true` for both.
 
 ```json
 {
-  "id": "homeduino-pir",
+  "id": "rflink-pir",
   "name": "PIR",
   "class": "HomeduinoRFPir",
   "protocols": [{
@@ -213,7 +213,7 @@ is used for sending or receiving. Default is `true` for both.
 
 ```json
 {
-  "id": "homeduino-contact",
+  "id": "rflink-contact",
   "name": "Contact",
   "class": "HomeduinoRFContactSensor",
   "protocols": [{
@@ -252,7 +252,7 @@ Some contacts only emit an event on open. For this you can set autoReset to true
 
 ```json
 {
-  "id": "homeduino-contact",
+  "id": "rflink-contact",
   "name": "Shutter Controller",
   "class": "HomeduinoRFShutter",
   "protocols": [{
@@ -270,7 +270,7 @@ Some contacts only emit an event on open. For this you can set autoReset to true
 
 ```json
 {
-  "id": "homeduino-generic-sensor",
+  "id": "rflink-generic-sensor",
   "name": "RFGenericSensor",
   "class": "HomeduinoRFGenericSensor",
   "protocols": [{
@@ -296,7 +296,7 @@ Some contacts only emit an event on open. For this you can set autoReset to true
 
 ```json
 {
-  "id": "homeduino-buttons",
+  "id": "rflink-buttons",
   "name": "Buttons",
   "class": "HomeduinoRFButtonsDevice",
   "buttons": [
@@ -355,7 +355,7 @@ for the first analog pin.
 
 ```json
 {
-  "id": "homeduino-analog-sensor",
+  "id": "rflink-analog-sensor",
   "name": "AnalogSensor",
   "class": "HomeduinoAnalogSensor",
   "attributes": [
@@ -381,7 +381,7 @@ state of it.
 
 ```json
 {
-  "id": "homeduino-contact-sensor",
+  "id": "rflink-contact-sensor",
   "name": "ContactSensor",
   "class": "HomeduinoContactSensor",
   "pin": 9,
@@ -399,7 +399,7 @@ presence state of it.
 
 ```json
 {
-  "id": "homeduino-pir",
+  "id": "rflink-pir",
   "name": "PIR",
   "class": "HomeduinoPir",
   "pin": 9,
