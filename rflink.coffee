@@ -8,18 +8,12 @@ module.exports = (env) ->
   _ = env.require('lodash')
   M = env.matcher
 
-  Board = rflink.Board
+  Board = require('./lib/board')
 
-  class HomeduinoPlugin extends env.plugins.Plugin
+  class RFLinkPlugin extends env.plugins.Plugin
 
     init: (app, @framework, @config) =>
-      if @config.driver is "serialport"
-        unless @config.receiverPin in [0, 1]
-          throw new Error("receiverPin must be 0 or 1")
-        unless 2 <= @config.transmitterPin <= 13
-          throw new Error("transmitterPin must be between 2 and 13")
-
-      @board = new Board(@config.driver, @config.driverOptions)
+      @board = new Board(@config.driverOptions)
 
       @board.on("data", (data) =>
         if @config.debug
@@ -44,23 +38,15 @@ module.exports = (env) ->
         @framework.on "after init", ( =>
           @board.connect(@config.connectionTimeout).then( =>
             env.logger.info("Connected to rflink device.")
-
-            if @config.enableDSTSensors
-              @board.readDstSensors(@config.dstSearchAddressPin).then( (ret) -> 
-                env.logger.info("DST sensors: #{ret.sensors}")
-              ).catch( (err) =>
-                env.logger.error("Couldn't scan for DST sensors: #{err.message}.")
-                env.logger.debug(err.stack)
-              )
-
-            if @config.enableReceiving
-              @board.rfControlStartReceiving(@config.receiverPin).then( =>
-                if @config.debug
-                  env.logger.debug("Receiving on pin #{@config.receiverPin}")
-              ).catch( (err) =>
-                env.logger.error("Couldn't start receiving: #{err.message}.")
-                env.logger.debug(err.stack)
-              )
+            if @config.rfdebug
+              env.logger.info("Enabling RFDEBUG...")
+              @board.enableRfDebug()
+            if @config.rfudebug
+              env.logger.info("Enabling RFUDEBUG...")
+              @board.enableRfuDebug()
+            if @config.qrfdebug
+              env.logger.info("Enabling QRFDEBUG...")
+              @board.enableQrfDebug()
             return
           ).then(resolve).catch( (err) =>
             env.logger.error("Couldn't connect to rflink device: #{err.message}.")
@@ -69,71 +55,30 @@ module.exports = (env) ->
           )
         )
       )
-      
-      # Enhance the config schemes with available protocols, so we can build a better
-      # gui for them
-      protocols = _.cloneDeep(Board.getAllRfProtocols())
-      for p in protocols
-        supports = {
-          temperature: p.values.temperature
-          humidity: p.values.humidity
-          state: p.values.state
-          all: p.values.all
-          battery: p.values.battery
-          presence: p.values.presence
-          lowBattery: p.values.lowBattery
-        }
-        for k, v of supports
-          if v?
-            delete p.values[k]
-          else
-            delete supports[k]
-        for k, v of p.values
-          v.type = "string" if v.type is "binary"
-      availableProtocolOptions = {}
-      for p in protocols
-        availableProtocolOptions[p.name] = {
-          type: "object"
-          properties: p.values
-        } 
 
       deviceConfigDef = require("./device-config-schema")
 
       deviceClasses = [
-        HomeduinoDHTSensor
-        HomeduinoDSTSensor
-        HomeduinoRFSwitch
-        HomeduinoRFDimmer
-        HomeduinoRFButtonsDevice
-        HomeduinoRFTemperature
-        HomeduinoRFWeatherStation
-        HomeduinoRFPir
-        HomeduinoRFContactSensor
-        HomeduinoRFShutter
-        HomeduinoRFGenericSensor
-        HomeduinoSwitch
-        HomeduinoAnalogSensor
-        HomeduinoContactSensor
-        HomeduinoPir
+        RFLinkSwitch
+        RFLinkDimmer
+#        RFLinkTemperature
+#        RFLinkWeatherStation
+#        RFLinkPir
+#        RFLinkContactSensor
+#        RFLinkShutter
+#        RFLinkGenericSensor
       ]
 
       for Cl in deviceClasses
         do (Cl) =>
           dcd = deviceConfigDef[Cl.name]
-          dcd.properties.protocols?.items?.properties?.name.defines = {
-            property: "options"
-            options: availableProtocolOptions
-          }
+#          dcd.properties.protocols?.items?.properties?.name.defines = {
+#            property: "options"
+#            options: availableProtocolOptions
+#          }
           @framework.deviceManager.registerDeviceClass(Cl.name, {
             prepareConfig: (config) =>
-              # legacy support for old configs (with just one protocol):
-              if config.protocol? and config.protocolOptions?
-                config.protocols = [
-                  { name: config.protocol, options: config.protocolOptions}
-                ]
-                delete config.protocol
-                delete config.protocolOptions
-              if config['class'] is "HomeduinoRFButtonsDevice"
+              if config['class'] is "RFLinkButtonsDevice"
                 for b in config.buttons
                   if b.protocol? and b.protocolOptions
                     b.protocols = [
@@ -149,168 +94,32 @@ module.exports = (env) ->
 
       @framework.ruleManager.addPredicateProvider(new RFEventPredicateProvider(@framework))
 
-      if @config.apikey? and @config.apikey.length > 0
-        @framework.userManager.addAllowPublicAccessCallback( (req) =>
-          return req.url.match(/^\/rflink\/received.*$/)?
-        )
-        app.get('/rflink/received', (req, res) =>
-          if req.query.apikey isnt @config.apikey
-            res.end('Invalid apikey')
-            return
-          buckets = JSON.parse(req.query.buckets)
-          pulses = req.query.pulses
-          @board.provessExternalReceive(buckets, pulses)
-          res.end('ACK')
-        )
+#      if @config.apikey? and @config.apikey.length > 0
+#        @framework.userManager.addAllowPublicAccessCallback( (req) =>
+#          return req.url.match(/^\/rflink\/received.*$/)?
+#        )
+#        app.get('/rflink/received', (req, res) =>
+#          if req.query.apikey isnt @config.apikey
+#            res.end('Invalid apikey')
+#            return
+#          buckets = JSON.parse(req.query.buckets)
+#          pulses = req.query.pulses
+#          @board.provessExternalReceive(buckets, pulses)
+#          res.end('ACK')
+#        )
 
-  hdPlugin = new HomeduinoPlugin()
+  hdPlugin = new RFLinkPlugin()
 
-  class HomeduinoDSTSensor extends env.devices.TemperatureSensor
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-      super()
-
-      lastError = null
-      setInterval(( => 
-        @_readSensor().then( (result) =>
-          lastError = null
-          variableManager = hdPlugin.framework.variableManager
-          processing = @config.processing or "$value"
-          info = variableManager.parseVariableExpression(
-            processing.replace(/\$value\b/g, result.temperature)
-          ) 
-          variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-            @emit 'temperature', value
-          )
-          #@emit 'temperature', result.temperature
-        ).catch( (err) =>
-          if lastError is err.message
-            if hdPlugin.config.debug
-              env.logger.debug("Suppressing repeated error message from DST read: #{err.message}")
-            return
-          env.logger.error("Error reading DST Sensor: #{err.message}.")
-          lastError = err.message
-        )
-      ), @config.interval)
-    
-    _readSensor: ()-> 
-      # Already reading? return the reading promise
-      if @_pendingRead? then return @_pendingRead
-      # Don't read the sensor too frequently, the minimal reading interval should be 2.5 seconds
-      if @_lastReadResult?
-        now = new Date().getTime()
-        if (now - @_lastReadTime) < 2000
-          return Promise.resolve @_lastReadResult
-      @_pendingRead = hdPlugin.pendingConnect.then( =>
-        env.logger.debug("pin #{@config.pin}, address #{@config.address}")
-
-        return @board.readDstSensor(@config.pin, @config.address).then( (result) =>
-          @_lastReadResult = result
-          @_lastReadTime = (new Date()).getTime()
-          @_pendingRead = null
-          return result
-        )
-      ).catch( (err) =>
-        @_pendingRead = null
-        throw err
-      )
-      
-    getTemperature: -> @_readSensor().then( (result) -> result.temperature )
-
-  #Original DHT implementation
-  class HomeduinoDHTSensor extends env.devices.TemperatureSensor
-
-    attributes:
-      temperature:
-        description: "the measured temperature"
-        type: "number"
-        unit: '°C'
-        acronym: 'T'
-      humidity:
-        description: "the measured humidity"
-        type: "number"
-        unit: '%'
-        acronym: 'RH'
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-      super()
-
-      lastError = null
-      setInterval(( => 
-        @_readSensor().then( (result) =>
-          lastError = null
-          variableManager = hdPlugin.framework.variableManager
-          processing = @config.processingTemp or "$value"
-          info = variableManager.parseVariableExpression(
-            processing.replace(/\$value\b/g, result.temperature)
-          ) 
-          variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-            @emit 'temperature', value
-          )
-          #@emit 'temperature', result.temperature
-          processing = @config.processingHum or "$value"
-          info = variableManager.parseVariableExpression(
-            processing.replace(/\$value\b/g, result.humidity)
-          ) 
-          variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-            @emit 'humidity', value
-          )
-          #@emit 'humidity', result.humidity
-        ).catch( (err) =>
-          if lastError is err.message
-            if hdPlugin.config.debug
-              env.logger.debug("Suppressing repeated error message from DHT read: #{err.message}")
-            return
-          env.logger.error("Error reading DHT Sensor: #{err.message}.")
-          lastError = err.message
-        )
-      ), @config.interval)
-    
-    _readSensor: (attempt = 0)-> 
-      # Already reading? return the reading promise
-      if @_pendingRead? then return @_pendingRead
-      # Don't read the sensor too frequently, the minimal reading interval should be 2.5 seconds
-      if @_lastReadResult?
-        now = new Date().getTime()
-        if (now - @_lastReadTime) < 2000
-          return Promise.resolve @_lastReadResult
-      @_pendingRead = hdPlugin.pendingConnect.then( =>
-        return @board.readDHT(@config.type, @config.pin).then( (result) =>
-          @_lastReadResult = result
-          @_lastReadTime = (new Date()).getTime()
-          @_pendingRead = null
-          return result
-        )
-      ).catch( (err) =>
-        @_pendingRead = null
-        if (err.message is "checksum_error" or err.message is "timeout_error") and attempt < 5
-          if hdPlugin.config.debug
-            env.logger.debug(
-              "got #{err.message} while reading DHT sensor, retrying: #{attempt} of 5"
-            )
-          return Promise.delay(2500).then( => @_readSensor(attempt+1) )
-        else
-          throw err
-      )
-      
-    getTemperature: -> @_readSensor().then( (result) -> result.temperature )
-    getHumidity: -> @_readSensor().then( (result) -> result.humidity )
-
-
-  doesProtocolMatch = (event, protocol) ->
-    match = no
-    if event.protocol is protocol.name
-      match = yes
-      for optName, optValue of protocol.options
-        #console.log "check", optName, optValue, event.values[optName]
-        unless optName is "unit" and event.values.all is true
-          if event.values[optName] isnt optValue
-            match = no
-    return match
+#  doesProtocolMatch = (event, protocol) ->
+#  match = no
+#  if event.protocol is protocol.name
+#    match = yes
+#    for optName, optValue of protocol.options
+##console.log "check", optName, optValue, event.values[optName]
+#      unless optName is "unit" and event.values.all is true
+#        if event.values[optName] isnt optValue
+#          match = no
+#  return match
 
   logDebug = (config, protocol, options) ->
     message = "Sending Protocol: #{protocol.name}"
@@ -332,9 +141,9 @@ module.exports = (env) ->
             if @_pluginConfig.debug
               logDebug(@_pluginConfig, p, options)
             return @board.rfControlSendMessage(
-              @_pluginConfig.transmitterPin, 
+              @_pluginConfig.transmitterPin,
               @_pluginConfig.rfrepeats,
-              p.name, 
+              p.name,
               options
             )
           )
@@ -360,17 +169,17 @@ module.exports = (env) ->
             return @board.rfControlSendMessage(
               @_pluginConfig.transmitterPin,
               @_pluginConfig.rfrepeats,
-              p.name, 
+              p.name,
               options
             )
           )
     return Promise.all(pending)
 
   extend = (obj, mixin) ->
-    obj[name] = method for name, method of mixin        
+    obj[name] = method for name, method of mixin
     obj
 
-  class HomeduinoRFSwitch extends env.devices.PowerSwitch
+  class RFLinkSwitch extends env.devices.PowerSwitch
 
     constructor: (@config, lastState, @board, @_pluginConfig) ->
       @id = config.id
@@ -414,7 +223,7 @@ module.exports = (env) ->
       )
 
 
-  class HomeduinoRFDimmer extends env.devices.DimmerActuator
+  class RFLinkDimmer extends env.devices.DimmerActuator
     _lastdimlevel: null
 
     constructor: (@config, lastState, @board, @_pluginConfig) ->
@@ -468,50 +277,9 @@ module.exports = (env) ->
       @_sendLevelToDimmers(@config.protocols, state, level).then( =>
         @_setDimlevel(level)
       )
-  
-  class HomeduinoRFButtonsDevice extends env.devices.ButtonsDevice
-
-    constructor: (@config, lastState, @board, @_pluginConfig) ->
-      @id = config.id
-      @name = config.name
-
-      for b in config.buttons
-        for p in b.protocols
-          _protocol = Board.getRfProtocol(p.name)
-          unless _protocol?
-            throw new Error(
-              "Could not find a protocol with the name \"#{p.name}\" in config" +
-              " of button \"#{b.id}\"."
-            )
-          unless _protocol.type is "switch" or "command"
-            throw new Error(
-              "\"#{p.name}\" in config of button \"#{b.id}\" is not a switch or a command protocol."
-            )
-            
-      @board.on('rf', (event) =>
-        for b in @config.buttons
-          unless b.receive is false
-            match = no
-            for p in b.protocols
-              if doesProtocolMatch(event, p)
-                match = yes
-            if match
-              @emit('button', b.id)
-        )
-  
-      super(config)
-
-    _sendStateToSwitches: sendToSwitchesMixin
-    
-    buttonPressed: (buttonId) ->
-      for b in @config.buttons
-        if b.id is buttonId
-          @emit 'button', b.id
-          return @_sendStateToSwitches(b.protocols)
-      throw new Error("No button with the id #{buttonId} found")
       
 
-  class HomeduinoRFContactSensor extends env.devices.ContactSensor
+  class RFLinkContactSensor extends env.devices.ContactSensor
 
     constructor: (@config, lastState, @board, @_pluginConfig) ->
       @id = config.id
@@ -540,7 +308,7 @@ module.exports = (env) ->
       )
       super()
 
-  class HomeduinoRFShutter extends env.devices.ShutterController
+  class RFLinkShutter extends env.devices.ShutterController
 
     constructor: (@config, lastState, @board, @_pluginConfig) ->
       @id = config.id
@@ -590,7 +358,7 @@ module.exports = (env) ->
       )
 
 
-  class HomeduinoRFPir extends env.devices.PresenceSensor
+  class RFLinkPir extends env.devices.PresenceSensor
 
     constructor: (@config, lastState, @board, @_pluginConfig) ->
       @id = config.id
@@ -623,7 +391,7 @@ module.exports = (env) ->
     getPresence: -> Promise.resolve @_presence
 
 
-  class HomeduinoRFTemperature extends env.devices.TemperatureSensor
+  class RFLinkTemperature extends env.devices.TemperatureSensor
 
     constructor: (@config, lastState, @board) ->
       @id = config.id
@@ -747,7 +515,7 @@ module.exports = (env) ->
     getLowBattery: -> Promise.resolve @_lowBattery
     getBattery: -> Promise.resolve @_battery
 
-  class HomeduinoRFWeatherStation extends env.devices.Sensor
+  class RFLinkWeatherStation extends env.devices.Sensor
 
     constructor: (@config, lastState, @board) ->
       @id = config.id
@@ -931,7 +699,7 @@ module.exports = (env) ->
     getHumidity: -> Promise.resolve @_humidity
     
 
-  class HomeduinoRFGenericSensor extends env.devices.Sensor
+  class RFLinkGenericSensor extends env.devices.Sensor
 
     constructor: (@config, lastState, @board) ->
       @id = config.id
@@ -962,7 +730,7 @@ module.exports = (env) ->
       name = attributeConfig.name
       if @attributes[name]?
         throw new Error(
-          "Two attributes with the same name in HomeduinoRFGenericSensor config \"#{name}\""
+          "Two attributes with the same name in RFLinkGenericSensor config \"#{name}\""
         )
       # Set description and label
       @attributes[name] = {
@@ -1010,165 +778,6 @@ module.exports = (env) ->
       @emit name, value
       @_lastReceiveTimes[name] = now
 
-  class HomeduinoSwitch extends env.devices.PowerSwitch
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-
-      if @config.defaultState?
-        @_state = @config.defaultState
-      else
-        @_state = lastState?.state?.value or off
-
-      hdPlugin.pendingConnect.then( =>
-        return @board.pinMode(@config.pin, Board.OUTPUT)
-      ).then( => 
-        return @_writeState(@_state)
-      ).catch( (error) =>
-        env.logger.error error
-        env.logger.debug error.stack
-      )
-      super()
-
-    getState: () -> Promise.resolve @_state
-
-    _writeState: (state) ->
-      if @config.inverted then _state = not state
-      else _state = state
-      return hdPlugin.pendingConnect.then( =>
-        return @board.digitalWrite(@config.pin, if _state then Board.HIGH else Board.LOW)
-      )
-        
-    changeStateTo: (state) ->
-      assert state is on or state is off
-      return @_writeState(state).then( =>
-        @_setState(state)
-      )
-
-  class HomeduinoContactSensor extends env.devices.ContactSensor
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-      @_contact = lastState?.contact?.value or false
-
-      # setup polling
-      hdPlugin.pendingConnect.then( =>
-        return @board.pinMode(@config.pin, Board.INPUT)
-      ).then( =>
-        requestContactValue = =>
-          @board.digitalRead(@config.pin).then( (value) =>
-            hasContact = (
-              if value is Board.HIGH then !@config.inverted
-              else @config.inverted
-            )
-            @_setContact(hasContact)
-          ).catch( (error) =>
-            env.logger.error error
-            env.logger.debug error.stack
-          )
-          setTimeout(requestContactValue, @config.interval or 5000)
-        requestContactValue()
-      ).catch( (error) =>
-        env.logger.error error
-        env.logger.debug error.stack
-      )
-      super()
-
-  class HomeduinoPir extends env.devices.PresenceSensor
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-      @_presence = lastState?.presence?.value or false
-
-      # setup polling
-      hdPlugin.pendingConnect.then( =>
-        return @board.pinMode(@config.pin, Board.INPUT)
-      ).then( =>
-        requestPresenceValue = =>
-          @board.digitalRead(@config.pin).then( (value) =>
-            isPresent = (
-              if value is Board.HIGH then !@config.inverted
-              else @config.inverted
-            )
-            @_setPresence(isPresent)
-          ).catch( (error) =>
-            env.logger.error error
-            env.logger.debug error.stack
-          )
-          setTimeout(requestPresenceValue, @config.interval or 5000)
-        requestPresenceValue()
-      ).catch( (error) =>
-        env.logger.error error
-        env.logger.debug error.stack
-      )
-      super()
-
-  class HomeduinoAnalogSensor extends env.devices.Sensor
-
-    constructor: (@config, lastState, @board) ->
-      @id = config.id
-      @name = config.name
-
-      @attributes = {}
-      for attributeConfig in @config.attributes
-        @_createAttribute(attributeConfig)
-      super()
-
-    _createAttribute: (attributeConfig) ->
-      name = attributeConfig.name
-      if @attributes[name]?
-        throw new Error(
-          "Two attributes with the same name in HomeduinoAnalogSensor config \"#{name}\""
-        )
-      # Set description and label
-      @attributes[name] = {
-        description: name
-        label: (
-          if attributeConfig.label? and attributeConfig.label.length > 0 then attributeConfig.label 
-          else name
-        )
-        type: "number"
-      }
-      # Set unit
-      if attributeConfig.unit? and attributeConfig.unit.length > 0
-        @attributes[name].unit = attributeConfig.unit
-
-      if attributeConfig.discrete?
-        @attributes[name].discrete = attributeConfig.discrete
-
-      if attributeConfig.acronym?
-        @attributes[name].acronym = attributeConfig.acronym
-                 
-      # generate getter:
-      @_createGetter(name, => Promise.resolve(@_attributesMeta[name].value))
-
-      # setup polling
-      hdPlugin.pendingConnect.then( => 
-        return @board.pinMode(attributeConfig.pin, Board.INPUT) 
-      ).then( => 
-        variableManager = hdPlugin.framework.variableManager
-        processing = attributeConfig.processing or "$value"
-        requestAttributeValue = =>
-          @board.analogRead(attributeConfig.pin).then( (value) =>
-            info = variableManager.parseVariableExpression(processing.replace(/\$value\b/g, value)) 
-            variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-              @_attributesMeta[name].value = value
-              @emit name, value
-            )
-          ).catch( (error) =>
-            env.logger.error error
-            env.logger.debug error.stack
-          )
-          setTimeout(requestAttributeValue, attributeConfig.interval or 5000)
-        requestAttributeValue()
-      ).catch( (error) =>
-        env.logger.error error
-        env.logger.debug error.stack
-      )
-
   ###
   The RF-Event Predicate Provider
   ----------------
@@ -1185,7 +794,7 @@ module.exports = (env) ->
     parsePredicate: (input, context) ->  
 
       rfSwitchDevices = _(@framework.deviceManager.devices)
-        .filter( (device) => device instanceof HomeduinoRFSwitch ).value()
+        .filter( (device) => device instanceof RFLinkSwitch ).value()
 
       device = null
       state = null

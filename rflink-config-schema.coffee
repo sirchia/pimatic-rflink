@@ -15,10 +15,6 @@ module.exports = {
          description: "The baudrate to use for serial communication"
          type: "integer"
          default: 57600
-    enableReceiving:
-      description: "Enable the receiving of 433mhz rf signals?"
-      type: "boolean"
-      default: true
     connectionTimeout:
       description: "Time to wait for ready package on connection"
       type: "integer"
@@ -27,4 +23,16 @@ module.exports = {
       description: "Log information for debugging, including received messages"
       type: "boolean"
       default: true
+    rfdebug:
+      description: "Log raw RF packets"
+      type: "boolean"
+      default: false
+    rfudebug:
+      description: "Log raw undecoded RF packets"
+      type: "boolean"
+      default: false
+    qrfdebug:
+      description: "Log raw undecoded RF packets"
+      type: "boolean"
+      default: false
 }

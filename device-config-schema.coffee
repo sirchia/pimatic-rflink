@@ -1,57 +1,5 @@
 module.exports = {
   title: "RFLink device config schemes"
-#  RFLinkDHTSensor: {
-#    title: "RFLinkDHTSensor config options"
-#    type: "object"
-#    extensions: ["xLink", "xAttributeOptions"]
-#    properties:
-#      type:
-#        description: "The type of the DHT sensor (22, 33, 44 or 55)"
-#        type: "integer"
-#        default: 22
-#      pin:
-#        description: "The digital pin, the DHT sensor is connected to."
-#        type: "integer"
-#      interval:
-#        description: "Polling interval for the readings, should be greater than 2"
-#        type: "integer"
-#        default: 10000
-#      processingTemp:
-#        description: "
-#          expression that can preprocess the value, $value is a placeholder for the temperature
-#          value itself."
-#        type: "string"
-#        default: "$value"
-#      processingHum:
-#        description: "
-#          expression that can preprocess the value, $value is a placeholder for the humidity
-#          value itself."
-#        type: "string"
-#        default: "$value"
-#    required: ["pin"]
-#  },
-#  RFLinkDSTSensor: {
-#    title: "RFLinkDSTSensor config options"
-#    type: "object"
-#    extensions: ["xLink", "xAttributeOptions"]
-#    properties:
-#      interval:
-#        description: "Polling interval for the readings, should be greater than 2"
-#        type: "integer"
-#        default: 10000
-#      pin:
-#        description: "The digital pin the DST sensor is connected to."
-#        type : "integer"
-#      address:
-#        description: "The address of the sensor"
-#        type: "string"
-#      processing:
-#        description: "
-#          expression that can preprocess the value, $value is a placeholder for the
-#          value itself."
-#        type: "string"
-#        default: "$value"
-#  },
   RFLinkSwitch: {
     title: "RFLinkSwitch config options"
     type: "object"
@@ -84,8 +32,8 @@ module.exports = {
         default: true
     required: ["protocols"]
   },
-  RFLinkRFDimmer: {
-    title: "RFLinkRFDimmer config options"
+  RFLinkDimmer: {
+    title: "RFLinkDimmer config options"
     type: "object"
     extensions: ["xConfirm"]
     properties:
@@ -116,48 +64,8 @@ module.exports = {
         default: true
     required: ["protocols"]
   },
-#  RFLinkRFButtonsDevice: {
-#    title: "RFLinkRFButtonsDevice config options"
-#    type: "object"
-#    extensions: ["xLink"]
-#    properties:
-#      buttons:
-#        description: "Buttons to display"
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            id:
-#              type: "string"
-#            text:
-#              type: "string"
-#            protocols:
-#              description: "The protocols to use."
-#              type: "array"
-#              default: []
-#              format: "table"
-#              items:
-#                type: "object"
-#                properties:
-#                  name:
-#                    type: "string"
-#                  options:
-#                    description: "The protocol options"
-#                    type: "object"
-#                  send:
-#                    type: "boolean"
-#                    description: "Toggle send with this protocol"
-#                    default: true
-#                  receive:
-#                    type: "boolean"
-#                    description: "Toggle receive with this protocol"
-#                    default: true
-#            required: ["protocols"]
-#  }
-#  RFLinkRFContactSensor: {
-#    title: "RFLinkRFContactSensor config options"
+#  RFLinkContactSensor: {
+#    title: "RFLinkContactSensor config options"
 #    type: "object"
 #    extensions: ["xConfirm", "xLink", "xClosedLabel", "xOpenedLabel"]
 #    properties:
@@ -185,8 +93,8 @@ module.exports = {
 #        default: 10000
 #    required: ["protocols"]
 #  }
-#  RFLinkRFShutter: {
-#    title: "RFLinkRFShutter config options"
+#  RFLinkShutter: {
+#    title: "RFLinkShutter config options"
 #    type: "object"
 #    extensions: ["xConfirm", "xLink", "xOnLabel", "xOffLabel"]
 #    properties:
@@ -209,8 +117,8 @@ module.exports = {
 #        default: true
 #    required: ["protocols"]
 #  }
-#  RFLinkRFTemperature: {
-#    title: "RFLinkRFTemperature config options"
+#  RFLinkTemperature: {
+#    title: "RFLinkTemperature config options"
 #    type: "object"
 #    extensions: ["xLink", "xAttributeOptions"]
 #    properties:
@@ -247,8 +155,8 @@ module.exports = {
 #        default: false
 #    required: ["protocols"]
 #  }
-#  RFLinkRFWeatherStation: {
-#    title: "RFLinkRFWeatherStation config options"
+#  RFLinkWeatherStation: {
+#    title: "RFLinkWeatherStation config options"
 #    type: "object"
 #    extensions: ["xLink", "xAttributeOptions"]
 #    properties:
@@ -273,8 +181,8 @@ module.exports = {
 #              type: "object"
 #    required: ["protocols"]
 #  }
-#  RFLinkRFGenericSensor: {
-#    title: "RFLinkRFGenericSensor config options"
+#  RFLinkGenericSensor: {
+#    title: "RFLinkGenericSensor config options"
 #    type: "object"
 #    extensions: ["xLink", "xAttributeOptions"]
 #    properties:
@@ -333,110 +241,8 @@ module.exports = {
 #              type: "string"
 #              required: false
 #  }
-#  RFLinkContactSensor: {
-#    title: "RFLinkContactSensor config options"
-#    type: "object"
-#    extensions: ["xConfirm", "xLink", "xClosedLabel", "xOpenedLabel"]
-#    properties:
-#      inverted:
-#        description: "active low?"
-#        type: "boolean"
-#        default: false
-#      interval:
-#        description: "Time until the pin is read again."
-#        type: "integer"
-#        default: 10000
-#      pin:
-#        description: "Digital Pin number on the Arduino"
-#        type: "integer"
-#    required: ["pin"]
-#  }
 #  RFLinkPir: {
 #    title: "RFLinkPir config options"
-#    type: "object"
-#    extensions: ["xLink", "xPresentLabel", "xAbsentLabel"]
-#    properties:
-#      inverted:
-#        description: "active low?"
-#        type: "boolean"
-#        default: false
-#      interval:
-#        description: "Time until the pin is read again."
-#        type: "integer"
-#        default: 10000
-#      pin:
-#        description: "Digital Pin number on the Arduino"
-#        type: "integer"
-#    required: ["pin"]
-#  }
-#  RFLinkAnalogSensor: {
-#    title: "RFLinkAnalogSensor config options"
-#    type: "object"
-#    extensions: ["xLink", "xAttributeOptions"]
-#    properties:
-#      attributes:
-#        description: "The attributes (sensor values) of the sensor"
-#        type: "array"
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            name:
-#              description: "Name for the attribute."
-#              type: "string"
-#            unit:
-#              description: "The unit of the attribute"
-#              type: "string"
-#              default: ""
-#            label:
-#              description: "A custom label to use in the frontend."
-#              type: "string"
-#              default: ""
-#            pin:
-#              description: "Arduino analog pin to read"
-#              type: "integer"
-#            interval:
-#              description: "The interval in which the analog pin should be read in ms"
-#              type: "integer"
-#              default: 5000
-#            processing:
-#              description: "
-#                expression that can preprocess the value, $value is a placeholder for the analog
-#                value itself."
-#              type: "string"
-#              default: "$value"
-#            discrete:
-#              description: "
-#                Should be set to true if the value does not change continuously over time.
-#              "
-#              type: "boolean"
-#              required: false
-#            acronym:
-#              description: "Acronym to show as value label in the frontend"
-#              type: "string"
-#              required: false
-#
-#  }
-#  RFLinkKeypad: {
-#    title: "RFLinkKeypad config options"
-#    type: "object"
-#    extensions: ["xLink"]
-#    properties:
-#      buttons:
-#        description: "Buttons of the keypad"
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            id:
-#              type: "string"
-#            text:
-#              type: "string"
-#  },
-#  RFLinkRFPir: {
-#    title: "RFLinkRFPir config options"
 #    type: "object"
 #    extensions: ["xLink", "xPresentLabel", "xAbsentLabel"]
 #    properties:
@@ -463,22 +269,5 @@ module.exports = {
 #        type: "integer"
 #        default: 10000
 #    required: ["protocols"]
-#  }
-#  RFLinkSwitch: {
-#    title: "RFLinkSwitch config options"
-#    type: "object"
-#    extensions: ["xConfirm", "xLink", "xOnLabel", "xOffLabel"]
-#    properties:
-#      pin:
-#        description: "The pin"
-#        type: "number"
-#      inverted:
-#        description: "active low?"
-#        type: "boolean"
-#        default: false
-#      defaultState:
-#        description: "State to set on startup, if not given, last state will be restored"
-#        type: "boolean"
-#        required: false
 #  }
 }

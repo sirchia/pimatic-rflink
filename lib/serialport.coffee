@@ -30,17 +30,18 @@ class SerialPortDriver extends events.EventEmitter
       resolver = null
 
       # setup data listner
-      @serialPort.on("data", (data) =>
+      @serialPort.on('data', (data) =>
 # Sanitize data
-        line = data.replace(/\0/g, '').trim()
+        line = data.replace(/\0/g, '').trim().replace(/^20;[0-9]*;/,'').slice(0,-1)
         @emit('data', line)
-        if line is "ready"
+        if !@ready && line.indexOf('Nodo RadioFrequencyLink - RFLink Gateway') > -1
           @ready = yes
           @emit 'ready'
+          @writeCommand("PING")
           return
         unless @ready
 # got, data but was not ready => reset
-          @serialPort.writeAsync("RESET\n").catch( (error) -> @emit("error", error) )
+          writeCommand("REBOOT").catch( (error) -> @emit("error", error) )
           return
         @emit('line', line)
       )
@@ -48,7 +49,7 @@ class SerialPortDriver extends events.EventEmitter
       return new Promise( (resolve, reject) =>
 # write ping to force reset (see data listerner) if device was not reseted probably
         Promise.delay(1000).then( =>
-          @serialPort.writeAsync("PING\n").catch(reject)
+          @writeCommand("PING").catch(reject)
         ).done()
         resolver = resolve
         @once("ready", resolver)
@@ -67,5 +68,8 @@ class SerialPortDriver extends events.EventEmitter
   disconnect: -> @serialPort.closeAsync()
 
   write: (data) -> @serialPort.writeAsync(data)
+
+  writeCommand: (data) ->
+    @serialPort.writeAsync('10;' + [].concat(data).join(';') + ';\n')
 
 module.exports = SerialPortDriver
