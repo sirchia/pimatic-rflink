@@ -92,6 +92,9 @@ class Board extends events.EventEmitter
   enableQrfDebug: ->
     @driver.writeCommand("QRFDEBUG=ON")
 
+  encodeAndWriteEvent: (event) ->
+    @driver.encodeAndWriteEvent(event)
+
 #  writeAndWait: (data) ->
 #    return @_lastAction = settled(@_lastAction).then( =>
 #      return Promise.all([@driver.write(data), @_waitForAcknowledge()])

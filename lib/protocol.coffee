@@ -45,16 +45,16 @@ class Protocol extends events.EventEmitter
   }
 
   @_ENCODE: {
-    id: (value) -> return value.toString(16)
+    id: (value) -> return ('000000'+value.toString(16)).slice(-6)
     switch: (value) -> return value
     cmd: (value) -> # ON/OFF/ALLON/ALLOFF
       result = null
-      if value?.state
+      if value.state
         result = 'ON'
       else
         result = 'OFF'
 
-      if value?.all
+      if value.all
         result = 'ALL'.concat(result)
 
       return result

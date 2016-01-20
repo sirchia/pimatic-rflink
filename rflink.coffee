@@ -114,7 +114,7 @@ module.exports = (env) ->
 #          res.end('ACK')
 #        )
 
-  hdPlugin = new RFLinkPlugin()
+  rflinkPlugin = new RFLinkPlugin()
 
 #  doesProtocolMatch = (event, protocol) ->
 #  match = no
@@ -131,27 +131,22 @@ module.exports = (env) ->
     message = "Sending Protocol: #{protocol.name}"
     for field, content of options
       message += " #{field}: #{content}"
-    message += " Pin: #{config.transmitterPin}
-                Repeats: #{config.rfrepeats}"
     env.logger.debug(message)
 
-  sendToSwitchesMixin = (protocols, state = null) ->
+  sendToSwitchesMixin = (protocols, state = false) ->
     pending = []
     for p in protocols
       do (p) =>
         unless p.send is false
-          options = _.clone(p.options)
-          unless options.all? then options.all = no
-          options.state = state if state?
-          pending.push hdPlugin.pendingConnect.then( =>
+          event = _.clone(p)
+          event.id = @protocol.decodeAttribute('id',event.id)
+          delete event.send
+          delete event.receive
+          event.action= @protocol.encodeAttribute('cmd', {'state': state})
+          pending.push rflinkPlugin.pendingConnect.then( =>
             if @_pluginConfig.debug
-              logDebug(@_pluginConfig, p, options)
-            return @board.rfControlSendMessage(
-              @_pluginConfig.transmitterPin,
-              @_pluginConfig.rfrepeats,
-              p.name,
-              options
-            )
+              logDebug(@_pluginConfig, p, event)
+            return @board.encodeAndWriteEvent(event)
           )
     return Promise.all(pending)
 
@@ -171,7 +166,7 @@ module.exports = (env) ->
           extend options, {dimlevel: level}
           if @_pluginConfig.debug
             logDebug(@_pluginConfig, p, options)
-          pending.push hdPlugin.pendingConnect.then( =>
+          pending.push rflinkPlugin.pendingConnect.then( =>
             return @board.rfControlSendMessage(
               @_pluginConfig.transmitterPin,
               @_pluginConfig.rfrepeats,
@@ -469,7 +464,7 @@ module.exports = (env) ->
 #              return
 #
 #            if event.values.temperature?
-#              variableManager = hdPlugin.framework.variableManager
+#              variableManager = rflinkPlugin.framework.variableManager
 #              processing = @config.processingTemp or "$value"
 #              info = variableManager.parseVariableExpression(
 #                processing.replace(/\$value\b/g, event.values.temperature)
@@ -479,7 +474,7 @@ module.exports = (env) ->
 #                @emit "temperature", @_temperatue
 #              )
 #            if event.values.humidity?
-#              variableManager = hdPlugin.framework.variableManager
+#              variableManager = rflinkPlugin.framework.variableManager
 #              processing = @config.processingHum or "$value"
 #              info = variableManager.parseVariableExpression(
 #                processing.replace(/\$value\b/g, event.values.humidity)
@@ -839,4 +834,4 @@ module.exports = (env) ->
       super()
     getType: -> 'event'
 
-  return hdPlugin
+  return rflinkPlugin
