@@ -7,10 +7,13 @@ class Protocol extends events.EventEmitter
     switch: (value) -> return value
     cmd: (value) -> # ON/OFF/ALLON/ALLOFF
       result = {}
-      result.all = value.indexOf('ALL') > -1
-      result.state = value.indexOf('ON') > -1
+      if value.indexOf('SET_LEVEL') > -1
+        result.level = @set_level(value.split('=')[1])
+      else
+        result.all = value.indexOf('ALL') > -1
+        result.state = value.indexOf('ON') > -1
       return result
-    set_level: (value) -> return parseInt(value) * 100 / 15 # 0-100 %
+    set_level: (value) -> return Math.round(parseInt(value) * 99 / 15) + 1 # 1-100 %
     temp: (value) -> # celcius
       result = parseInt(value, 16)
       if result >= 32768
@@ -59,7 +62,7 @@ class Protocol extends events.EventEmitter
 
       return result
 
-    set_level: (value) -> return value.toString() * 100 / 15 # 0-100 %
+    set_level: (value) -> return Math.round(value * 15 / 100).toString() # 0-100 % -> 0-15
     temp: (value) -> # celcius
       result = value.toString(16)
       if result >= 32768

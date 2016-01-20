@@ -150,35 +150,26 @@ module.exports = (env) ->
           )
     return Promise.all(pending)
 
-  sendToDimmersMixin = (protocols, state = null, level = 0) ->
+  sendToDimmersMixin = (protocols, level = 0) ->
     pending = []
     for p in protocols
       do (p) =>
         unless p.send is false
-          options = _.clone(p.options)
-          unless options.all? then options.all = no
-          options.state = state if state?
-          _protocol = Board.getRfProtocol(p.name)
-          if _protocol.values.dimlevel?
-            min = _protocol.values.dimlevel.min
-            max = _protocol.values.dimlevel.max
-            level = Math.round(level / ((100 / (max - min)) + min))
-          extend options, {dimlevel: level}
-          if @_pluginConfig.debug
-            logDebug(@_pluginConfig, p, options)
+          event = _.clone(p)
+          event.id = @protocol.decodeAttribute('id',event.id)
+          delete event.send
+          delete event.receive
+          if level is 0
+            event.action= @protocol.encodeAttribute('cmd', {'state': false})
+          else
+            event.action= @protocol.encodeAttribute('set_level', level)
           pending.push rflinkPlugin.pendingConnect.then( =>
-            return @board.rfControlSendMessage(
-              @_pluginConfig.transmitterPin,
-              @_pluginConfig.rfrepeats,
-              p.name,
-              options
-            )
+            if @_pluginConfig.debug
+              logDebug(@_pluginConfig, p, event)
+            return @board.encodeAndWriteEvent(event)
           )
     return Promise.all(pending)
 
-  extend = (obj, mixin) ->
-    obj[name] = method for name, method of mixin
-    obj
 
   class RFLinkSwitch extends env.devices.PowerSwitch
 
@@ -209,39 +200,26 @@ module.exports = (env) ->
   class RFLinkDimmer extends env.devices.DimmerActuator
     _lastdimlevel: null
 
-    constructor: (@config, lastState, @board, @_pluginConfig) ->
+    constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
       @id = config.id
       @name = config.name
       @_dimlevel = lastState?.dimlevel?.value or 0
       @_lastdimlevel = lastState?.lastdimlevel?.value or 100
       @_state = lastState?.state?.value or off
 
-      for p in config.protocols
-        _protocol = Board.getRfProtocol(p.name)
-        unless _protocol?
-          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
-        unless _protocol.type is "dimmer" or "switch"
-          throw new Error("\"#{p.name}\" is not a dimmer or a switch protocol.")
-
       @board.on('rf', (event) =>
         for p in @config.protocols
           unless p.receive is false
-            match = doesProtocolMatch(event, p)
-            if match
-              if event.values.state?
-                if event.values.state is false
+            if @protocol.switchEventMatches(event, p)
+              if event.cmd.level?
+                @_setDimlevel(event.cmd.level)
+              else
+                if event.cmd.state is false
                   unless @_dimlevel is 0
                     @_lastdimlevel = @_dimlevel
                   @_setDimlevel(0)
                 else
                   @_setDimlevel(@_lastdimlevel)
-              else
-                _protocol = Board.getRfProtocol(p.name)
-                if _protocol.values.dimlevel?
-                  min = _protocol.values.dimlevel.min
-                  max = _protocol.values.dimlevel.max
-                  dimlevel = Math.round(event.values.dimlevel * ((100.0 / (max - min))+min))
-                  @_setDimlevel(dimlevel)
         )
       super()
 
@@ -257,7 +235,7 @@ module.exports = (env) ->
       unless @_dimlevel is 0
         @_lastdimlevel = @_dimlevel
 
-      @_sendLevelToDimmers(@config.protocols, state, level).then( =>
+      @_sendLevelToDimmers(@config.protocols, level).then( =>
         @_setDimlevel(level)
       )
       
