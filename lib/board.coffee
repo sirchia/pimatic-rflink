@@ -2,24 +2,14 @@ Promise = require 'bluebird'
 assert = require 'assert'
 events = require 'events'
 
-settled = (promise) -> Promise.settle([promise])
-
 class Board extends events.EventEmitter
 
-  @HIGH=1
-  @LOW=0
-  @INPUT=0
-  @OUTPUT=1
-  @INPUT_PULLUP=2
-
-  _awaitingAck: []
-  _opened: no
   ready: no
 
-  constructor: (driverOptions) ->
+  constructor: (driverOptions, @protocol) ->
     # setup a new serialport driver
     SerialPortDriver = require './serialport'
-    @driver = new SerialPortDriver(driverOptions)
+    @driver = new SerialPortDriver(driverOptions, @protocol)
 
     @_lastAction = Promise.resolve()
     @driver.on('ready', =>
@@ -59,11 +49,11 @@ class Board extends events.EventEmitter
         @setupWatchdog()
         return
       # Try to send ping, if it failes, there is something wrong...
-      @driver.write("10;PING;\n").then( =>
+      @driver.writeCommand("PING").then( =>
         @setupWatchdog()
       ).timeout(20*1000).catch( (err) =>
         @emit 'reconnect', err
-        @connect(@timeout, @retries).catch( (error) =>
+        @connect(@timeout, @retries).catch( () =>
 # Could not reconnect, so start watchdog again, to trigger next try
           @emit 'reconnect', err
           return
@@ -76,19 +66,16 @@ class Board extends events.EventEmitter
     clearTimeout(@_watchdogTimeout)
 
   _onLine: (line) ->
-#console.log "data:", JSON.stringify(line)
     @_lastDataTime = new Date().getTime()
-    args = line.split(" ")
-    assert args.length >= 1
-    cmd = args[0]
-    args.splice(0, 1)
-    #console.log cmd, args
-    switch cmd
-      when 'ACK', 'ERR' then @_handleAcknowledge(cmd, args)
-      when 'RF' then @_handleRFControl(cmd, args)
-      when 'KP' then @_handleKeypad(cmd, args)
-      when 'PING' then ;#nop
-      else console.log "unknown message received: #{line}"
+
+    event = @protocol.decodeLine line
+
+    if event.debug?
+      @emit 'rfdebug', event.debug
+    else if event.ack? then
+      #nop
+    else
+      @emit 'rf', event
 
 
   whenReady: ->
@@ -132,29 +119,6 @@ class Board extends events.EventEmitter
 #      i++
 #    return @writeAndWait("RF send #{pin} #{repeats} #{pulseLengthsArgs} #{pulses}\n")
 
-  _onAcknowledge: () =>
-    return new Promise( (resolve) =>
-      @_awaitingAck.push resolve
-    )
-
-  _waitForAcknowledge: () =>
-    return @_onAcknowledge().then( ( {cmd, args} ) =>
-      switch cmd
-        when 'ERR' then throw new Error(args[0])
-        when 'ACK'
-          switch args.length
-            when 0 then return
-            when 1 then return args[0]
-            else return args
-        else assert false
-    )
-
-  _handleAcknowledge: (cmd, args) ->
-    assert @_awaitingAck.length > 0
-    resolver = @_awaitingAck[0]
-    resolver({cmd, args})
-    @_awaitingAck.splice(0, 1)
-    return
 
 #  _handleRFControl: (cmd, args) ->
 #    unless args.length is 10 and args[0] is 'receive'

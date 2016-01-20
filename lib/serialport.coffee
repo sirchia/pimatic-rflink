@@ -9,11 +9,11 @@ Promise.promisifyAll(SerialPort.prototype)
 
 class SerialPortDriver extends events.EventEmitter
 
-  constructor: (protocolOptions)->
+  constructor: (protocolOptions, @protocol)->
     @serialPort = new SerialPort(protocolOptions.serialDevice, {
       baudrate: protocolOptions.baudrate,
       parser: serialport.parsers.readline("\r\n")
-    }, openImmediately = no)
+    })
 
 
   connect: (timeout, retries) ->
@@ -32,12 +32,11 @@ class SerialPortDriver extends events.EventEmitter
       # setup data listner
       @serialPort.on('data', (data) =>
 # Sanitize data
-        line = data.replace(/\0/g, '').trim().replace(/^20;[0-9]*;/,'').slice(0,-1)
+        line = data.replace(/\0/g, '').trim()
         @emit('data', line)
-        if !@ready && line.indexOf('Nodo RadioFrequencyLink - RFLink Gateway') > -1
+        if !@ready && line.indexOf('RFLink Gateway') > -1
           @ready = yes
           @emit 'ready'
-          @writeCommand("PING")
           return
         unless @ready
 # got, data but was not ready => reset
@@ -67,9 +66,13 @@ class SerialPortDriver extends events.EventEmitter
 
   disconnect: -> @serialPort.closeAsync()
 
-  write: (data) -> @serialPort.writeAsync(data)
+  write: (data) ->
+    @serialPort.writeAsync(data)
 
-  writeCommand: (data) ->
-    @serialPort.writeAsync('10;' + [].concat(data).join(';') + ';\n')
+  encodeAndWriteEvent: (event) ->
+    @write(@protocol.encodeLine(event))
+
+  writeCommand: (command) ->
+    @encodeAndWriteEvent({action: command})
 
 module.exports = SerialPortDriver
