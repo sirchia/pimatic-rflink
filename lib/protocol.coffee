@@ -48,7 +48,9 @@ class Protocol extends events.EventEmitter
   }
 
   @_ENCODE: {
-    id: (value) -> return ('000000'+value.toString(16)).slice(-6)
+    id: (value) ->
+      stringVal = value.toString(16);
+      return stringVal.length >= 6 ? stringVal : ('000000' + stringVal).slice(-6)
     switch: (value) -> return value
     cmd: (value) -> # ON/OFF/ALLON/ALLOFF
       result = null
