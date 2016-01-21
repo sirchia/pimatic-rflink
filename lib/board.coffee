@@ -1,5 +1,4 @@
 Promise = require 'bluebird'
-assert = require 'assert'
 events = require 'events'
 
 class Board extends events.EventEmitter
@@ -102,54 +101,5 @@ class Board extends events.EventEmitter
 ##console.log "writeAndWait result: ", result
 #        result )
 #    )
-
-#  rfControlSendMessage: (pin, repeats, protocolName, message) ->
-#    result = rfcontrol.encodeMessage(protocolName, message)
-#    return @rfControlSendPulses(pin, repeats, result.pulseLengths, result.pulses)
-
-#  rfControlSendPulses: (pin, repeats, pulseLengths, pulses) ->
-#    assert typeof pin is "number", "pin should be a number"
-#    assert Array.isArray(pulseLengths), "pulseLengths should be an array"
-#    assert pulseLengths.length <= 8, "pulseLengths.length should be <= 8"
-#    assert typeof pulses is "string", "pulses should be a string"
-#    pulseLengthsArgs = ""
-#    i = 0
-#    for pl in pulseLengths
-#      pulseLengthsArgs += " #{pl}"
-#      i++
-#    while i < 8
-#      pulseLengthsArgs += " 0"
-#      i++
-#    return @writeAndWait("RF send #{pin} #{repeats} #{pulseLengthsArgs} #{pulses}\n")
-
-
-#  _handleRFControl: (cmd, args) ->
-#    unless args.length is 10 and args[0] is 'receive'
-#      console.log "Unknown RF response \"#{args.join(" ")}\""
-#      return
-#
-#    strSeq = args[1]
-#    for a in args[2..9]
-#      strSeq += " #{a}"
-#
-#    info = rfcontrol.prepareCompressedPulses(strSeq)
-#    @_emitReceive(info)
-#    return
-#
-#  provessExternalReceive: (pulseLengths, pulses) ->
-#    info = rfcontrol.sortCompressedPulses(pulseLengths, pulses)
-#    @_emitReceive(info)
-#    return
-#
-#  _emitReceive: (info) ->
-#    @emit 'rfReceive', info
-#    results = rfcontrol.decodePulses(info.pulseLengths, info.pulses)
-#    for r in results
-#      @emit 'rf', r
-#    return
-
-#  @getRfProtocol: (protocolName) -> rfcontrol.getProtocol(protocolName)
-#
-#  @getAllRfProtocols: () -> rfcontrol.getAllProtocols()
 
 module.exports = Board
