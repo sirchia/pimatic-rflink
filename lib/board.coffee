@@ -29,6 +29,9 @@ class Board extends events.EventEmitter
       @emit "line", line
       @_onLine(line)
     )
+    @driver.on("send", (data) =>
+      @emit "send", data
+    )
     @on('ready', => @setupWatchdog())
 
   connect: (@timeout = 5*60*1000, @retries = 3) ->

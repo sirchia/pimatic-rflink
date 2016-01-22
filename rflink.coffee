@@ -31,6 +31,11 @@ module.exports = (env) ->
           env.logger.debug "data: \"#{data}\""
       )
 
+      @board.on("send", (data) =>
+        if @config.debug
+          env.logger.debug "send: \"#{data}\""
+      )
+
       @board.on("rfdebug", (data) =>
         if @rfdebug
           env.logger.debug "rfdebug: \" #{data}\""

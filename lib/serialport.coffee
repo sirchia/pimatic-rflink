@@ -67,6 +67,7 @@ class SerialPortDriver extends events.EventEmitter
   disconnect: -> @serialPort.closeAsync()
 
   write: (data) ->
+    @emit 'send', data
     @serialPort.writeAsync(data)
 
   encodeAndWriteEvent: (event) ->
