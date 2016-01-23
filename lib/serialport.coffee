@@ -9,7 +9,7 @@ Promise.promisifyAll(SerialPort.prototype)
 
 class SerialPortDriver extends events.EventEmitter
 
-  constructor: (protocolOptions, @protocol)->
+  constructor: (protocolOptions)->
     @serialPort = new SerialPort(protocolOptions.serialDevice, {
       baudrate: protocolOptions.baudrate,
       parser: serialport.parsers.readline("\r\n")
@@ -40,15 +40,15 @@ class SerialPortDriver extends events.EventEmitter
           return
         unless @ready
 # got, data but was not ready => reset
-          writeCommand("REBOOT").catch( (error) -> @emit("error", error) )
+          write("10;REBOOT;\n").catch( (error) -> @emit("error", error) )
           return
         @emit('line', line)
       )
 
       return new Promise( (resolve, reject) =>
 # write ping to force reset (see data listerner) if device was not reseted probably
-        Promise.delay(1000).then( =>
-          @writeCommand("PING").catch(reject)
+        Promise.delay(2000).then( =>
+          @write("10;PING;\n").catch(reject)
         ).done()
         resolver = resolve
         @once("ready", resolver)
@@ -69,11 +69,5 @@ class SerialPortDriver extends events.EventEmitter
   write: (data) ->
     @emit 'send', data
     @serialPort.writeAsync(data)
-
-  encodeAndWriteEvent: (event) ->
-    @write(@protocol.encodeLine(event))
-
-  writeCommand: (command) ->
-    @encodeAndWriteEvent({action: command})
 
 module.exports = SerialPortDriver

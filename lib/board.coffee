@@ -8,7 +8,7 @@ class Board extends events.EventEmitter
   constructor: (driverOptions, @protocol) ->
     # setup a new serialport driver
     SerialPortDriver = require './serialport'
-    @driver = new SerialPortDriver(driverOptions, @protocol)
+    @driver = new SerialPortDriver(driverOptions)
 
     @_lastAction = Promise.resolve()
     @driver.on('ready', =>
@@ -51,7 +51,7 @@ class Board extends events.EventEmitter
         @setupWatchdog()
         return
       # Try to send ping, if it failes, there is something wrong...
-      @driver.writeCommand("PING").then( =>
+      @_writeCommand("PING").then( =>
         @setupWatchdog()
       ).timeout(20*1000).catch( (err) =>
         @emit 'reconnect', err
@@ -86,16 +86,19 @@ class Board extends events.EventEmitter
     return @pendingConnect
 
   enableRfDebug: ->
-    @driver.writeCommand("RFDEBUG=ON")
+    @_writeCommand("RFDEBUG=ON")
 
   enableRfuDebug: ->
-    @driver.writeCommand("RFUDEBUG=ON")
+    @_writeCommand("RFUDEBUG=ON")
 
   enableQrfDebug: ->
-    @driver.writeCommand("QRFDEBUG=ON")
+    @_writeCommand("QRFDEBUG=ON")
 
   encodeAndWriteEvent: (event) ->
-    @driver.encodeAndWriteEvent(event)
+    @_writeAndWait(@protocol.encodeLine(event))
+
+  _writeCommand: (command) ->
+    @encodeAndWriteEvent({action: command})
 
 #  writeAndWait: (data) ->
 #    return @_lastAction = settled(@_lastAction).then( =>
