@@ -1,7 +1,7 @@
 {
   "name": "pimatic-rflink",
   "description": "pimatic plugin to use various 433 MHz devices, sensors and more with an RFLink gateway.",
-  "author": "Riccardo Sirchia <sirchia.r@gmail.com> ",
+  "author": "Riccardo Sirchia <sirchia.r@gmail.com> (https://github.com/sirchia/pimatic-rflink)",
   "main": "rflink",
   "files": [
     "rflink.coffee",
