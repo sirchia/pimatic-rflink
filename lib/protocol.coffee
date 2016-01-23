@@ -2,6 +2,17 @@ events = require 'events'
 
 class Protocol extends events.EventEmitter
 
+  @_ACK: [
+    "PONG", # reply to PING
+    "DEBUG", # covers reply of sent RFDEBUG, RFUDEBUG and QRFDEBUG en-/disable commands
+    "RFLink Gateway", # covers reply of VERSION and welcome message
+    "OK" # reply to all correctly processed RF commands
+  ]
+
+  @_NACK: [
+    "CMD UNKNOWN" #received when command could not be processed
+  ]
+
   @_DECODE: {
     id: (value) -> return parseInt(value, 16)
     switch: (value) -> return value
@@ -109,20 +120,22 @@ class Protocol extends events.EventEmitter
 
     event.node = lineElements[0]
     event.seq = lineElements[1]
-
-    if lineElements[2] is 'DEBUG'
-      event.debug = lineElements.slice(3).concat(";")
-    else if lineElements[2] is 'PONG' or lineElements[2].indexOf("DEBUG") > -1 or lineElements[2].indexOf("RFLink Gateway") > -1
-      event.ack = lineElements[2]
-    else
-      event.name = lineElements[2]
+    event.name = lineElements[2]
 
     labels = lineElements.slice(3)
 
-    for label in labels
-      labelElements = label.split("=")
-      attributeName = labelElements[0].toLowerCase()
-      event[attributeName] = @decodeAttribute(attributeName, labelElements[1])
+    if event.name is 'DEBUG'
+      event.debug = labels.concat(";")
+      return event
+
+    event.ackResponse = true for ack in Protocol._ACK when event.name.indexOf(ack) > -1
+    event.ackResponse = false for nack in Protocol._NACK when event.name.indexOf(nack) > -1
+
+    if not event.ackResponse?
+      for label in labels
+        labelElements = label.split("=")
+        attributeName = labelElements[0].toLowerCase()
+        event[attributeName] = @decodeAttribute(attributeName, labelElements[1])
 
     return event
 

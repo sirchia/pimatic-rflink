@@ -1,9 +1,12 @@
 Promise = require 'bluebird'
 events = require 'events'
 
+settled = (promise) -> Promise.settle([promise])
+
 class Board extends events.EventEmitter
 
   ready: no
+  _awaitingAck: []
 
   constructor: (driverOptions, @protocol) ->
     # setup a new serialport driver
@@ -72,12 +75,9 @@ class Board extends events.EventEmitter
 
     event = @protocol.decodeLine line
 
-    if event.debug?
-      @emit 'rfdebug', event.debug
-    else if event.ack? then
-      #nop
-    else
-      @emit 'rf', event
+    if event.debug? then @emit 'rfdebug', event.debug
+    else if event.ackResponse? then @_handleAcknowledge event
+    else @emit 'rf', event
 
 
   whenReady: ->
@@ -100,12 +100,30 @@ class Board extends events.EventEmitter
   _writeCommand: (command) ->
     @encodeAndWriteEvent({action: command})
 
-#  writeAndWait: (data) ->
+  _writeAndWait: (data) ->
+    return @driver.write(data)
 #    return @_lastAction = settled(@_lastAction).then( =>
 #      return Promise.all([@driver.write(data), @_waitForAcknowledge()])
 #      .then( ([_, result]) ->
-##console.log "writeAndWait result: ", result
-#        result )
+#        console.log "_writeAndWait result: ", result
+#        result ).timeout(5000, "operation timed out")
 #    )
+
+  _onAcknowledge: () =>
+    return new Promise( (resolve) =>
+      @_awaitingAck.push resolve
+    )
+
+  _waitForAcknowledge: () =>
+    return @_onAcknowledge().then( ( event ) =>
+      unless event.ackResponse then throw new Error("Failed to send: " + event.name)
+      return event.name
+    )
+
+  _handleAcknowledge: (event) ->
+    unless @_awaitingAck.length <= 0
+      resolver = @_awaitingAck.splice(0, 1)[0]
+      resolver(event)
+
 
 module.exports = Board
