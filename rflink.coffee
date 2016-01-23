@@ -33,7 +33,7 @@ module.exports = (env) ->
 
       @board.on("send", (data) =>
         if @config.debug
-          env.logger.debug "send: \"#{data}\""
+          env.logger.debug "send: \"#{data.slice(0,-1)}\""
       )
 
       @board.on("rfdebug", (data) =>
@@ -43,6 +43,10 @@ module.exports = (env) ->
 
       @board.on("reconnect", (err) ->
         env.logger.warn "Couldn't connect (#{err.message}), retrying..."
+      )
+
+      @board.on("warning", (warning) =>
+        env.logger.warn warning
       )
 
       @pendingConnect = new Promise( (resolve, reject) =>
