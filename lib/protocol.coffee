@@ -46,7 +46,7 @@ class Protocol extends events.EventEmitter
     winchl: (value) -> return parseInt(value, 16)
     wintmp: (value) -> return parseInt(value, 16)
     chime: (value) -> return parseInt(value)
-    smokealaert: (value) -> return value # ON/OFF
+    smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
     co2: (value) -> return parseInt(value)
     sound: (value) -> return parseInt(value)
@@ -100,7 +100,7 @@ class Protocol extends events.EventEmitter
     winchl: (value) -> return value.toString(16)
     wintmp: (value) -> return value.toString(16)
     chime: (value) -> return value.toString()
-    smokealaert: (value) -> return value # ON/OFF
+    smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
     co2: (value) -> return value.toString()
     sound: (value) -> return value.toString()
