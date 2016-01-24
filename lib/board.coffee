@@ -101,13 +101,11 @@ class Board extends events.EventEmitter
     @encodeAndWriteEvent({action: command})
 
   _writeAndWait: (data) ->
-    return @driver.write(data)
-#    return @_lastAction = settled(@_lastAction).then( =>
-#      return Promise.all([@driver.write(data), @_waitForAcknowledge()])
-#      .then( ([_, result]) ->
-#        console.log "_writeAndWait result: ", result
-#        result ).timeout(5000, "operation timed out")
-#    )
+    return @_lastAction = settled(@_lastAction).then( =>
+      return Promise.all([@driver.write(data), @_waitForAcknowledge()])
+      .then( ([_, result]) ->
+        result ).timeout(5000, "operation timed out")
+    )
 
   _onAcknowledge: () =>
     return new Promise( (resolve) =>
