@@ -41,7 +41,7 @@ class SerialPortDriver extends events.EventEmitter
         unless @ready
 # got, data but was not ready => reset
           @emit 'warning', 'Received data before ready message, reset device'
-          write("10;REBOOT;\n").catch( (error) -> @emit("error", error) )
+          @write("10;REBOOT;\n").catch( (error) -> @emit("error", error) )
           return
         @emit('line', line)
       )
