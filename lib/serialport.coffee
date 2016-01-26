@@ -48,9 +48,9 @@ class SerialPortDriver extends events.EventEmitter
 
       return new Promise( (resolve, reject) =>
 # write ping to force reset (see data listerner) if device was not reseted probably
-        Promise.delay(2000).then( =>
+        Promise.delay(1000).then( =>
           @write("10;PING;\n").catch(reject)
-        ).done()
+        ).catch( (error) -> @emit("error", error))
         resolver = resolve
         @once("ready", resolver)
       ).timeout(timeout).catch( (err) =>
@@ -63,7 +63,7 @@ class SerialPortDriver extends events.EventEmitter
         else
           throw err
       )
-    )
+    ).catch( (error) -> @emit("error", error) )
 
   disconnect: -> @serialPort.closeAsync()
 
