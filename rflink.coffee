@@ -33,7 +33,7 @@ module.exports = (env) ->
 
       @board.on("send", (data) =>
         if @config.debug
-          env.logger.debug "send: \"#{data.slice(0,-1)}\""
+          env.logger.debug "send: \"#{data.trim()}\""
       )
 
       @board.on("rfdebug", (data) =>
@@ -41,28 +41,33 @@ module.exports = (env) ->
           env.logger.debug "rfdebug: \" #{data}\""
       )
 
-      @board.on("reconnect", (err) ->
-        env.logger.warn "Couldn't connect (#{err.message}), retrying..."
+      @board.on("connected", () =>
+        env.logger.info("Connected to rflink device.")
+        if @config.rfdebug
+          env.logger.info("Enabling RFDEBUG...")
+          @board.enableRfDebug()
+        if @config.rfudebug
+          env.logger.info("Enabling RFUDEBUG...")
+          @board.enableRfuDebug()
+        if @config.qrfdebug
+          env.logger.info("Enabling QRFDEBUG...")
+          @board.enableQrfDebug()
+        return
       )
 
       @board.on("warning", (warning) =>
         env.logger.warn warning
       )
 
+      @board.on("error", (error) =>
+        env.logger.error("Error with connection to rflink device: #{error.message}.")
+        env.logger.error(error.stack)
+      )
+
       @pendingConnect = new Promise( (resolve, reject) =>
         @framework.on "after init", ( =>
           @board.connect(@config.connectionTimeout).then( =>
-            env.logger.info("Connected to rflink device.")
-            if @config.rfdebug
-              env.logger.info("Enabling RFDEBUG...")
-              @board.enableRfDebug()
-            if @config.rfudebug
-              env.logger.info("Enabling RFUDEBUG...")
-              @board.enableRfuDebug()
-            if @config.qrfdebug
-              env.logger.info("Enabling QRFDEBUG...")
-              @board.enableQrfDebug()
-            return
+
           ).then(resolve).catch( (err) =>
             env.logger.error("Couldn't connect to rflink device: #{err.message}.")
             env.logger.error(err.stack)
@@ -87,10 +92,6 @@ module.exports = (env) ->
       for Cl in deviceClasses
         do (Cl) =>
           dcd = deviceConfigDef[Cl.name]
-#          dcd.properties.protocols?.items?.properties?.name.defines = {
-#            property: "options"
-#            options: availableProtocolOptions
-#          }
           @framework.deviceManager.registerDeviceClass(Cl.name, {
             prepareConfig: (config) =>
               if config['class'] is "RFLinkButtonsDevice"
@@ -124,17 +125,6 @@ module.exports = (env) ->
 #        )
 
   rflinkPlugin = new RFLinkPlugin()
-
-#  doesProtocolMatch = (event, protocol) ->
-#  match = no
-#  if event.protocol is protocol.name
-#    match = yes
-#    for optName, optValue of protocol.options
-##console.log "check", optName, optValue, event.values[optName]
-#      unless optName is "unit" and event.values.all is true
-#        if event.values[optName] isnt optValue
-#          match = no
-#  return match
 
   logDebug = (config, protocol, options) ->
     message = "Sending Protocol: #{protocol.name}"
@@ -239,8 +229,7 @@ module.exports = (env) ->
     changeDimlevelTo: (level) ->
       unless @config.forceSend
         if @_dimlevel is level then return Promise.resolve true
-      if level is 0
-        state = false
+
       unless @_dimlevel is 0
         @_lastdimlevel = @_dimlevel
 

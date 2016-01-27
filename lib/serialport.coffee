@@ -10,64 +10,68 @@ Promise.promisifyAll(SerialPort.prototype)
 class SerialPortDriver extends events.EventEmitter
 
   constructor: (protocolOptions)->
+    @connected = false
+
     @serialPort = new SerialPort(protocolOptions.serialDevice, {
       baudrate: protocolOptions.baudrate,
       parser: serialport.parsers.readline("\r\n")
-    })
+    }, false)
+
+    @serialPort.on('error', (error) =>
+      @emit('error', error)
+    )
+
+    @serialPort.on('close', =>
+      @connected = false
+      @emit 'close'
+    )
+
+    @serialPort.on('open', =>
+      @connected = true
+      @emit 'open'
+    )
+
+    # setup data listner
+    @serialPort.on('data', (data) =>
+# Sanitize data
+      line = data.replace(/\0/g, '').trim()
+      @emit('data', line)
+      @emit('line', line)
+    )
 
 
   connect: (timeout, retries) ->
-# cleanup
-    @ready = no
-    @serialPort.removeAllListeners('error')
-    @serialPort.removeAllListeners('data')
-    @serialPort.removeAllListeners('close')
-
-    @serialPort.on('error', (error) => @emit('error', error) )
-    @serialPort.on('close', => @emit 'close' )
+    if @connected
+      @emit 'warning', 'connect called while already connected'
+      return Promise.resolve(false)
 
     return @serialPort.openAsync().then( =>
-      resolver = null
 
-      # setup data listner
-      @serialPort.on('data', (data) =>
-# Sanitize data
-        line = data.replace(/\0/g, '').trim()
-        @emit('data', line)
-        if !@ready && line.indexOf('RFLink Gateway') > -1
-          @ready = yes
-          @emit 'ready'
-          return
-        unless @ready
-# got, data but was not ready => reset
-          @emit 'warning', 'Received data before ready message, reset device'
-          @write("10;REBOOT;\n").catch( (error) -> @emit("error", error) )
-          return
-        @emit('line', line)
-      )
+      return new Promise((resolve) =>
+        if (@connected)
+          resolve()
+        else
+          @once("open", resolve)
 
-      return new Promise( (resolve, reject) =>
-# write ping to force reset (see data listerner) if device was not reseted probably
-        Promise.delay(1000).then( =>
-          @write("10;PING;\n").catch(reject)
-        ).catch( (error) -> @emit("error", error))
-        resolver = resolve
-        @once("ready", resolver)
       ).timeout(timeout).catch( (err) =>
-        @removeListener("ready", resolver)
-        @serialPort.removeAllListeners('data')
         if err.name is "TimeoutError" and retries > 0
-          @emit 'reconnect', err
           # try to reconnect
           return @connect(timeout, retries-1)
         else
           throw err
       )
-    ).catch( (error) -> @emit("error", error) )
+    )
 
-  disconnect: -> @serialPort.closeAsync()
+  disconnect: ->
+    unless @connected
+      @emit 'warning', 'disconnect called while not connected'
+      return Promise.resolve(false)
+
+    return @serialPort.closeAsync()
 
   write: (data) ->
+    unless @connected
+      throw new Error "Tried to send data '#{data}' while we were not connected"
     @emit 'send', data
     @serialPort.writeAsync(data)
 
