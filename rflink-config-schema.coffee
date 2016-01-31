@@ -16,9 +16,16 @@ module.exports = {
          type: "integer"
          default: 57600
     connectionTimeout:
-      description: "Time to wait for ready package on connection"
+      description: "Time in ms to wait for ready package or data to be received"
+      type: "integer"
+      default: 10*1000 # 10 seconds
+    pingInterval:
+      description: "Ping is requested at this interval when no other data hase been received"
       type: "integer"
       default: 5*60*1000 # 5min
+    reconnectInterval:
+      description: "Time in ms between reconnect attempts, if undefined will increment gradually to maximum interval of 1 minute"
+      type: "integer"
     debug:
       description: "Log information for debugging, including received messages"
       type: "boolean"

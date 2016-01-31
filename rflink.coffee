@@ -24,7 +24,7 @@ module.exports = (env) ->
         env.logger.warn warning
       )
 
-      @board = new Board(@config.driverOptions, @protocol)
+      @board = new Board(@config.driverOptions, @protocol, @config.connectionTimeout, @config.reconnectInterval, @config.pingInterval)
 
       @board.on("data", (data) =>
         if @config.debug
@@ -52,7 +52,11 @@ module.exports = (env) ->
         if @config.qrfdebug
           env.logger.info("Enabling QRFDEBUG...")
           @board.enableQrfDebug()
-        return
+      )
+
+      @board.on("debug", (message) =>
+        if @config.debug
+          env.logger.debug message
       )
 
       @board.on("warning", (warning) =>
@@ -60,20 +64,16 @@ module.exports = (env) ->
       )
 
       @board.on("error", (error) =>
-        env.logger.error("Error with connection to rflink device: #{error.message}.")
+        env.logger.error("Error with connection to RFLink device: #{error.message}.")
         env.logger.error(error.stack)
       )
 
-      @pendingConnect = new Promise( (resolve, reject) =>
-        @framework.on "after init", ( =>
-          @board.connect(@config.connectionTimeout).then( =>
+      @framework.on "after init", ( =>
+        @board.connect(@config.connectionTimeout)
+      )
 
-          ).then(resolve).catch( (err) =>
-            env.logger.error("Couldn't connect to rflink device: #{err.message}.")
-            env.logger.error(err.stack)
-            reject(err)
-          )
-        )
+      @framework.on "destroy", ( =>
+        @board.destroy()
       )
 
       deviceConfigDef = require("./device-config-schema")
@@ -142,7 +142,7 @@ module.exports = (env) ->
           delete event.send
           delete event.receive
           event.action= @protocol.encodeAttribute('cmd', {'state': state})
-          pending.push rflinkPlugin.pendingConnect.then( =>
+          pending.push @board.connectionReady.then( =>
             if @_pluginConfig.debug
               logDebug(@_pluginConfig, p, event)
             return @board.encodeAndWriteEvent(event)
@@ -162,7 +162,7 @@ module.exports = (env) ->
             event.action= @protocol.encodeAttribute('cmd', {'state': false})
           else
             event.action= @protocol.encodeAttribute('set_level', level)
-          pending.push rflinkPlugin.pendingConnect.then( =>
+          pending.push @board.connectionReady.then( =>
             if @_pluginConfig.debug
               logDebug(@_pluginConfig, p, event)
             return @board.encodeAndWriteEvent(event)

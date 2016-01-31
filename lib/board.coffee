@@ -6,10 +6,10 @@ settled = (promise) -> Promise.settle([promise])
 
 class Board extends events.EventEmitter
 
-  ready: no
   _awaitingAck: []
+  _dynamicReconnectInterval: 0
 
-  constructor: (driverOptions, @protocol) ->
+  constructor: (driverOptions, @protocol, @connectionTimeout, @reconnectInterval, @pingInterval) ->
     # await the ready message to be received before writes are allowed
     @_blockWritesUntilready()
 
@@ -18,36 +18,56 @@ class Board extends events.EventEmitter
 
     @_lastAction = Promise.resolve()
 
-    @driver.on('open', =>
-      # setup the watchdog to reconnect when connection appears lost
-      @setupWatchdog()
+    @driver.on('debug', (debug) =>
+      @emit 'debug', debug
     )
+
+    @driver.on('warning', (warning) =>
+      @emit 'warning', warning
+    )
+
     @driver.on('error', (error) =>
-      @emit('error', error)
-    )
-    @driver.on('close', =>
-      @ready = no
-      # serial port opened, await an acknowledge for the ready to be received
-      @_blockWritesUntilready()
+      @emit 'error', error
+      @emit 'warning', 'Try to recover from the error by reconnecting to the RFLink device'
       @reconnect()
-      @emit('close')
     )
+
+    @driver.on('close', =>
+      # serial port closed, await an acknowledge for the ready to be received
+      @_blockWritesUntilready()
+    )
+
     @driver.on("data", (data) =>
+      @_lastDataTime = new Date().getTime()
       @emit "data", data
+      @_processData(data)
     )
-    @driver.on("line", (line) =>
-      @_onLine(line)
-    )
+
     @driver.on("send", (data) =>
       @emit "send", data
     )
 
 
-  connect: (@timeout = 5*60*1000, @retries = 3) =>
-    return @driver.connect(timeout, retries).catch( (err) =>
-      @emit 'error', err
-      throw err
-    )
+  connect: =>
+    return @driver.connect()
+      .then( =>
+        # driver connected, register timeout on acknowledge of ready message
+        @connectionReady
+          .timeout(@connectionTimeout)
+          .catch( =>
+            @emit 'warning', 'No ready message received within connection timeout, reboot device'
+            @driver.write(@protocol.encodeLine({action: "REBOOT"}))
+            @connectionReady.timeout(@connectionTimeout, 'No ready message received within connection timeout after reboot, reconnect')
+        )
+      ).timeout(@connectionTimeout, 'Connection not opened within connection timeout')
+      .catch( (err) =>
+        if @driver.isConnected()
+          @disconnect()
+
+        retryTime = @_determineReconnectInterval()
+        @emit 'debug', "Connect failed (#{err.message}), retry in #{retryTime/1000} seconds"
+        setTimeout(@reconnect, retryTime)
+      )
 
   disconnect: ->
     @stopWatchdog()
@@ -56,46 +76,52 @@ class Board extends events.EventEmitter
       throw err
     )
 
-  reconnect: ->
-    @disconnect().then(=>
+  destroy: ->
+    @disconnect()
+
+  reconnect: =>
+    @emit 'debug', 'Attempt to reconnect to device...'
+    if @driver.isConnected()
+      @disconnect().then(=>
+        @connect()
+      )
+    else
       @connect()
-    )
 
   setupWatchdog: ->
     @stopWatchdog()
     @_watchdogTimeout = setTimeout( (=>
       now = new Date().getTime()
-      # last received data is not very old, conncection looks ok:
-      if now - @_lastDataTime < @timeout
+      # last received data is not very old, connection looks ok:
+      if now - @_lastDataTime < @pingInterval
         @setupWatchdog()
         return
 
-      # Try to send ping, if it failes, there is something wrong...
+      # Try to send ping, if it fails, there is something wrong...
       @_writeCommand("PING").then( =>
         @setupWatchdog()
-      ).timeout(20*1000).catch( (err) =>
-        @emit 'error', "Couldn't connect (#{err.message}), retrying..."
+      ).timeout(@connectionTimeout).catch( (err) =>
+        @emit 'warning', "Device ping failed (#{err.message})"
         @reconnect()
         return
       )
-    ), 20*1000)
+    ), Math.min(@pingInterval / 10, @connectionTimeout))
 
   stopWatchdog: ->
     clearTimeout(@_watchdogTimeout)
+    @_watchdogTimeout = undefined
 
-  _onLine: (line) ->
-    @_lastDataTime = new Date().getTime()
-
-    event = @protocol.decodeLine line
+  _processData: (data) ->
+    event = @protocol.decodeLine data
 
     # continue if we are already ready
-    unless @ready
+    unless @connectionReady.isFulfilled()
       # continue if this line would make us ready and store state
-      unless @ready = (event.name.indexOf('RFLink Gateway') > -1)
+      unless event.name.indexOf('RFLink Gateway') > -1
         # we receive a non-ready message before a ready message
         # reboot the RFLink to reset its state
         @emit 'warning', "Received data before the ready message from RFLink, discard and reboot..."
-        driver.write(@protocol.encodeLine({action: "REBOOT"}))
+        @driver.write(@protocol.encodeLine({action: "REBOOT"}))
         return
 
     if event.debug? then @emit 'rfdebug', event.debug
@@ -113,10 +139,18 @@ class Board extends events.EventEmitter
     @_writeCommand("QRFDEBUG=ON")
 
   _blockWritesUntilready: ->
+    @connectionReady = new Promise((resolve) =>
+      @_markConnectionReady = resolve
+    )
+
+    @_lastDataTime = 0
     @_awaitingAck = [ =>
       @emit 'debug', 'Received welcome message from RFLink'
-      @_lastDataTime = new Date().getTime()
-      @ready = yes
+      @_markConnectionReady()
+      # reset the _dynamicReconnectInterval to start at quick reconnect again
+      @_dynamicReconnectInterval = 0
+      # setup the watchdog to reconnect when connection appears lost
+      @setupWatchdog()
       @emit 'connected'
     ]
 
@@ -130,7 +164,7 @@ class Board extends events.EventEmitter
     return @_lastAction = settled(@_lastAction).then( =>
       return Promise.all([@driver.write(data), @_waitForAcknowledge()])
       .then( ([_, result]) ->
-        result ).timeout(5000, "operation timed out")
+        result ).timeout(@connectionTimeout, "write operation timed out")
     )
 
   _onAcknowledge: () =>
@@ -148,5 +182,11 @@ class Board extends events.EventEmitter
     resolver = @_awaitingAck.splice(0, 1)[0]
     resolver(event)
 
+  _determineReconnectInterval: ->
+    if @reconnectInterval?
+      return @reconnectInterval
+    else
+      # keep doubling the reconnect interval, minimum 1 second, maximum 1 minute 
+      return @_dynamicReconnectInterval = Math.max(1000, Math.min(60000, @_dynamicReconnectInterval * 2))
 
 module.exports = Board
