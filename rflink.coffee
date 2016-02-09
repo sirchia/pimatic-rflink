@@ -84,7 +84,7 @@ module.exports = (env) ->
 #        RFLinkTemperature
 #        RFLinkWeatherStation
         RFLinkPir
-#        RFLinkContactSensor
+        RFLinkContactSensor
 #        RFLinkShutter
 #        RFLinkGenericSensor
       ]
@@ -238,35 +238,25 @@ module.exports = (env) ->
       )
       
 
-#  class RFLinkContactSensor extends env.devices.ContactSensor
-#
-#    constructor: (@config, lastState, @board, @_pluginConfig) ->
-#      @id = config.id
-#      @name = config.name
-#      @_contact = lastState?.contact?.value or false
-#
-#      for p in config.protocols
-#        _protocol = Board.getRfProtocol(p.name)
-#        unless _protocol?
-#          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
-#
-#      @board.on('rf', (event) =>
-#        for p in @config.protocols
-#          match = doesProtocolMatch(event, p)
-#          if match
-#            hasContact = (
-#              if event.values.contact? then event.values.contact
-#              else (not event.values.state)
-#            )
-#            @_setContact(hasContact)
-#            if @config.autoReset is true
-#              clearTimeout(@_resetContactTimeout)
-#              @_resetContactTimeout = setTimeout(( =>
-#                @_setContact(!hasContact)
-#              ), @config.resetTime)
-#      )
-#      super()
-#
+  class RFLinkContactSensor extends env.devices.ContactSensor
+
+    constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
+      @id = config.id
+      @name = config.name
+      @_contact = lastState?.contact?.value or false
+
+      @board.on('rf', (event) =>
+        for p in @config.protocols
+          if @protocol.switchEventMatches(event, p)
+            @_setContact(event.cmd.state)
+            if @config.autoReset is true
+              clearTimeout(@_resetContactTimeout)
+              @_resetContactTimeout = setTimeout(( =>
+                @_setContact(!event.cmd.state)
+              ), @config.resetTime)
+      )  
+      super()
+
 #  class RFLinkShutter extends env.devices.ShutterController
 #
 #    constructor: (@config, lastState, @board, @_pluginConfig) ->
