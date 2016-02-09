@@ -5,8 +5,13 @@ Plugin for using various 433 Mhz devices and sensors with a connected
 [RFLink Gateway](http://www.nemcon.nl/blog2/).
 
 This device supports [many 433 MHz devices](http://www.nemcon.nl/blog2/2015/07/devlist)
-but this plugin is currently limited to only support switch and dimmer devices. Support for other devices may be added
-in the future.
+but this plugin is currently limited to only supports the following devices:
+- Switches
+- Dimmers
+- PIR sensors
+- Contact sensors 
+
+Support for other devices may be added in the future.
 
 
 Plugin configuration
