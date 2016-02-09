@@ -68,35 +68,38 @@ module.exports = {
         default: true
     required: ["protocols"]
   },
-#  RFLinkContactSensor: {
-#    title: "RFLinkContactSensor config options"
-#    type: "object"
-#    extensions: ["xConfirm", "xLink", "xClosedLabel", "xOpenedLabel"]
-#    properties:
-#      protocols:
-#        description: "The protocols to use."
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            name:
-#              type: "string"
-#            options:
-#              description: "The protocol options"
-#              type: "object"
-#      autoReset:
-#        description: """Reset the state after resetTime. Useful for contact sensors,
-#                      that only emit open or close events"""
-#        type: "boolean"
-#        default: false
-#      resetTime:
-#        description: """Time after that the contact state is reseted."""
-#        type: "integer"
-#        default: 10000
-#    required: ["protocols"]
-#  }
+  RFLinkContactSensor: {
+    title: "RFLinkContactSensor config options"
+    type: "object"
+    extensions: ["xConfirm", "xLink", "xClosedLabel", "xOpenedLabel"]
+    properties:
+      protocols:
+        description: "The switch protocols to use."
+        type: "array"
+        default: []
+        format: "table"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            id:
+              description: "The device/home id of the switch"
+              type: "string"
+            switch:
+              description: "The button id of the switch"
+              type: "string"
+            required: ["name", "id", "switch"]
+      autoReset:
+        description: "Reset the state after resetTime. Useful for pir sensors that emit a absent signal"
+        type: "boolean"
+        default: true
+      resetTime:
+        description: "Time after that the presence value is reset to absent."
+        type: "integer"
+        default: 10000
+    required: ["protocols"]
+  }
 #  RFLinkShutter: {
 #    title: "RFLinkShutter config options"
 #    type: "object"
@@ -245,33 +248,36 @@ module.exports = {
 #              type: "string"
 #              required: false
 #  }
-#  RFLinkPir: {
-#    title: "RFLinkPir config options"
-#    type: "object"
-#    extensions: ["xLink", "xPresentLabel", "xAbsentLabel"]
-#    properties:
-#      protocols:
-#        description: "The protocols to use."
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            name:
-#              type: "string"
-#            options:
-#              description: "The protocol options"
-#              type: "object"
-#      autoReset:
-#        description: """Reset the state after resetTime. Useful for pir sensors,
-#                      that emit present and absent events"""
-#        type: "boolean"
-#        default: true
-#      resetTime:
-#        description: "Time after that the presence value is reset to absent."
-#        type: "integer"
-#        default: 10000
-#    required: ["protocols"]
-#  }
+  RFLinkPir: {
+    title: "RFLinkPir config options"
+    type: "object"
+    extensions: ["xLink", "xPresentLabel", "xAbsentLabel"]
+    properties:
+      protocols:
+        description: "The switch protocols to use."
+        type: "array"
+        default: []
+        format: "table"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            id:
+              description: "The device/home id of the switch"
+              type: "string"
+            switch:
+              description: "The button id of the switch"
+              type: "string"
+            required: ["name", "id", "switch"]
+      autoReset:
+        description: "Reset the state after resetTime. Useful for pir sensors that don't emit a absent signal"
+        type: "boolean"
+        default: true
+      resetTime:
+        description: "Time after that the presence value is reset to absent."
+        type: "integer"
+        default: 10000
+    required: ["protocols"]
+  }
 }
