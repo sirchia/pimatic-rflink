@@ -83,7 +83,7 @@ module.exports = (env) ->
         RFLinkDimmer
 #        RFLinkTemperature
 #        RFLinkWeatherStation
-#        RFLinkPir
+        RFLinkPir
 #        RFLinkContactSensor
 #        RFLinkShutter
 #        RFLinkGenericSensor
@@ -317,38 +317,28 @@ module.exports = (env) ->
 #      )
 #
 #
-#  class RFLinkPir extends env.devices.PresenceSensor
-#
-#    constructor: (@config, lastState, @board, @_pluginConfig) ->
-#      @id = config.id
-#      @name = config.name
-#      @_presence = lastState?.presence?.value or false
-#
-#      for p in config.protocols
-#        _protocol = Board.getRfProtocol(p.name)
-#        unless _protocol?
-#          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
-#        unless _protocol.type is "pir"
-#          throw new Error("\"#{p.name}\" is not a PIR protocol.")
-#
-#      resetPresence = ( =>
-#        @_setPresence(no)
-#      )
-#
-#      @board.on('rf', (event) =>
-#        for p in @config.protocols
-#          match = doesProtocolMatch(event, p)
-#          if match
-#            unless @_setPresence is event.values.presence
-#              @_setPresence(event.values.presence)
-#            clearTimeout(@_resetPresenceTimeout)
-#            if @config.autoReset is true
-#              @_resetPresenceTimeout = setTimeout(resetPresence, @config.resetTime)
-#      )
-#      super()
-#
-#    getPresence: -> Promise.resolve @_presence
-#
+  class RFLinkPir extends env.devices.PresenceSensor
+
+    constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
+      @id = config.id
+      @name = config.name
+      @_presence = lastState?.presence?.value or false
+      
+      resetPresence = ( =>
+        @_setPresence(no)
+      )
+      
+      @board.on('rf', (event) =>
+        for p in @config.protocols
+          if @protocol.switchEventMatches(event, p)
+            @_setPresence(event.cmd.state)
+            if @config.autoReset is true
+              @_resetPresenceTimeout = setTimeout(resetPresence, @config.resetTime)
+      )  
+      super()
+
+    getPresence: -> Promise.resolve @_presence
+
 #
 #  class RFLinkTemperature extends env.devices.TemperatureSensor
 #
