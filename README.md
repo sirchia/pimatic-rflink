@@ -100,3 +100,37 @@ is used for sending or receiving. Default is `true` for both.
   }]
 }
 ```
+
+### ContactSensor example:
+```json
+{
+  "id": "window",
+  "name": "Window",
+  "class": "RFLinkContactSensor",
+  "autoReset": false,
+  "protocols": [
+    {
+      "name": "NewKaku",
+      "id": "00d199ee",
+      "switch": "1"
+    }
+  ]
+},
+```
+
+### PIR sensor example:
+```json
+{
+  "id": "movement",
+  "name": "Movement",
+  "class": "RFLinkPir",
+  "autoReset": false,
+  "protocols": [
+    {
+      "name": "NewKaku",
+      "id": "00d189ee",
+      "switch": "1"
+    }
+  ]
+},
+```
