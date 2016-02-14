@@ -51,9 +51,12 @@ module.exports = {
           properties:
             name:
               type: "string"
-            options:
-              description: "The protocol options"
-              type: "object"
+            id:
+              description: "The device/home id of the switch"
+              type: "string"
+            switch:
+              description: "The button id of the switch"
+              type: "string"
             send:
               type: "boolean"
               description: "Toggle send with this protocol"
@@ -62,6 +65,7 @@ module.exports = {
               type: "boolean"
               description: "Toggle receive with this protocol"
               default: true
+          required: ["name", "id", "switch"]
       forceSend: 
         type: "boolean"
         description: "Resend signal even if switch has the requested state already"
