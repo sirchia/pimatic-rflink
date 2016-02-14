@@ -29,7 +29,7 @@ module.exports = {
               type: "boolean"
               description: "Toggle receive with this protocol"
               default: true
-            required: ["name", "id", "switch"]
+          required: ["name", "id", "switch"]
       forceSend: 
         type: "boolean"
         description: "Resend signal even if switch has the requested state already"
@@ -89,7 +89,7 @@ module.exports = {
             switch:
               description: "The button id of the switch"
               type: "string"
-            required: ["name", "id", "switch"]
+          required: ["name", "id", "switch"]
       autoReset:
         description: "Reset the state after resetTime. Useful for pir sensors that emit a absent signal"
         type: "boolean"
@@ -269,7 +269,7 @@ module.exports = {
             switch:
               description: "The button id of the switch"
               type: "string"
-            required: ["name", "id", "switch"]
+          required: ["name", "id", "switch"]
       autoReset:
         description: "Reset the state after resetTime. Useful for pir sensors that don't emit a absent signal"
         type: "boolean"
