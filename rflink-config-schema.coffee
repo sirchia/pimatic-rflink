@@ -26,6 +26,7 @@ module.exports = {
     reconnectInterval:
       description: "Time in ms between reconnect attempts, if undefined will increment gradually to maximum interval of 1 minute"
       type: "integer"
+      required: false
     debug:
       description: "Log information for debugging, including received messages"
       type: "boolean"

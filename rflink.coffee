@@ -93,15 +93,6 @@ module.exports = (env) ->
         do (Cl) =>
           dcd = deviceConfigDef[Cl.name]
           @framework.deviceManager.registerDeviceClass(Cl.name, {
-            prepareConfig: (config) =>
-              if config['class'] is "RFLinkButtonsDevice"
-                for b in config.buttons
-                  if b.protocol? and b.protocolOptions
-                    b.protocols = [
-                      { name: b.protocol, options: b.protocolOptions}
-                    ]
-                    delete b.protocol
-                    delete b.protocolOptions
             configDef: dcd
             createCallback: (deviceConfig, lastState) => 
               device = new Cl(deviceConfig, lastState, @board, @config, @protocol)
