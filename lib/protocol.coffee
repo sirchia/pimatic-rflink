@@ -135,7 +135,9 @@ class Protocol extends events.EventEmitter
       for label in labels
         labelElements = label.split("=")
         attributeName = labelElements[0].toLowerCase()
-        event[attributeName] = @decodeAttribute(attributeName, labelElements[1])
+        try event[attributeName] = @decodeAttribute(attributeName, labelElements[1])
+        catch e
+          @emit 'warning', "Could not decode value #{labelElements[1]} for attribute #{attributeName} (#{e.message})"
 
     return event
 
@@ -155,14 +157,10 @@ class Protocol extends events.EventEmitter
   decodeAttribute: (name, value) ->
     return Protocol._DECODE[name]?(value);
 
-    @emit 'warning', ' could not decode attribute ' + name + ' with value ' + value
-    return value
-
   encodeAttribute: (name, value) ->
     if name of Protocol._ENCODE
       return Protocol._ENCODE[name] value;
     else
-      @emit 'warning', ' could not encode attribute ' + name + ' with value ' + value
       return value
 
 
