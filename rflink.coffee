@@ -163,8 +163,8 @@ module.exports = (env) ->
   class RFLinkSwitch extends env.devices.PowerSwitch
 
     constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
-      @id = config.id
-      @name = config.name
+      @id = @config.id
+      @name = @config.name
       @_state = lastState?.state?.value
 
       @board.on('rf', (event) =>
@@ -190,8 +190,8 @@ module.exports = (env) ->
     _lastdimlevel: null
 
     constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
-      @id = config.id
-      @name = config.name
+      @id = @config.id
+      @name = @config.name
       @_dimlevel = lastState?.dimlevel?.value or 0
       @_lastdimlevel = lastState?.lastdimlevel?.value or 100
       @_state = lastState?.state?.value or off
@@ -231,8 +231,8 @@ module.exports = (env) ->
   class RFLinkContactSensor extends env.devices.ContactSensor
 
     constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
-      @id = config.id
-      @name = config.name
+      @id = @config.id
+      @name = @config.name
       @_contact = lastState?.contact?.value or false
 
       @board.on('rf', (event) =>
@@ -250,11 +250,11 @@ module.exports = (env) ->
 #  class RFLinkShutter extends env.devices.ShutterController
 #
 #    constructor: (@config, lastState, @board, @_pluginConfig) ->
-#      @id = config.id
-#      @name = config.name
+#      @id = @config.id
+#      @name = @config.name
 #      @_position = lastState?.position?.value or 'stopped'
 #
-#      for p in config.protocols
+#      for p in @config.protocols
 #        _protocol = Board.getRfProtocol(p.name)
 #        unless _protocol?
 #          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
@@ -300,8 +300,8 @@ module.exports = (env) ->
   class RFLinkPir extends env.devices.PresenceSensor
 
     constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
-      @id = config.id
-      @name = config.name
+      @id = @config.id
+      @name = @config.name
       @_presence = lastState?.presence?.value or false
       
       resetPresence = ( =>
@@ -314,7 +314,7 @@ module.exports = (env) ->
             if @config.invert is false
               @_setPresence(event.cmd.state)
             else
-              @_setPresence(!event.cmd.state)  
+              @_setPresence(!event.cmd.state)
             if @config.autoReset is true
               @_resetPresenceTimeout = setTimeout(resetPresence, @config.resetTime)
       )  
@@ -325,8 +325,8 @@ module.exports = (env) ->
   class RFLinkData extends env.devices.Sensor
 
     constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
-      @id = config.id
-      @name = config.name
+      @id = @config.id
+      @name = @config.name
       @_temp = lastState?.temp?.value or 0
       @_hum = lastState?.hum?.value or 0
       @_baro = lastState?.baro?.value or 0
@@ -350,9 +350,9 @@ module.exports = (env) ->
       @_meter = lastState?.meter?.value or 0
       @_volt = lastState?.volt?.value or 0
       @_current = lastState?.current?.value or 0
-      
+
       @attributes = {}
-      
+
       for s in @config.values
         switch s
           when "temp"
@@ -543,8 +543,8 @@ module.exports = (env) ->
             throw new Error(
               "Values should be one of: temp, hum, baro, hstatus, uv, lux, rain, raintot, winsp, awinsp, wings, windir, winchl, wintmp, co2, sound, kwatt, watt, dist, meter, volt, current"
             )
-        
-        
+
+
       @board.on('rf', (event) =>
         for p in @config.protocols
           if @protocol.eventMatches(event, p)
@@ -616,8 +616,8 @@ module.exports = (env) ->
               @emit "volt", @_volt
             if event.current?
               @_current = event.current
-              @emit "current", @_current     
-      )  
+              @emit "current", @_current
+      )
       super()
 
     getTemp: -> Promise.resolve @_temp
@@ -643,15 +643,15 @@ module.exports = (env) ->
     getMeter: -> Promise.resolve @_meter
     getVolt: -> Promise.resolve @_volt
     getCurrent: -> Promise.resolve @_current
- 
+
 
 #  class RFLinkGenericSensor extends env.devices.Sensor
 #
 #    constructor: (@config, lastState, @board) ->
-#      @id = config.id
-#      @name = config.name
+#      @id = @config.id
+#      @name = @config.name
 #
-#      for p in config.protocols
+#      for p in @config.protocols
 #        _protocol = Board.getRfProtocol(p.name)
 #        unless _protocol?
 #          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
