@@ -121,68 +121,6 @@ module.exports = {
 #        description: "Resend signal even if switch has the requested state already"
 #        default: true
 #  }
-#  RFLinkTemperature: {
-#    title: "RFLinkTemperature config options"
-#    type: "object"
-#    extensions: ["xLink", "xAttributeOptions"]
-#    properties:
-#      protocols:
-#        description: "The protocols to use."
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            name:
-#              type: "string"
-#            options:
-#              description: "The protocol options"
-#              type: "object"
-#      processingTemp:
-#        description: "
-#          expression that can preprocess the value, $value is a placeholder for the temperature
-#          value itself."
-#        type: "string"
-#        default: "$value"
-#      processingHum:
-#        description: "
-#          expression that can preprocess the value, $value is a placeholder for the humidity
-#          value itself."
-#        type: "string"
-#        default: "$value"
-#      isFahrenheit:
-#        description: "
-#          boolean that sets the right units if the temperature is to be reported in
-#           Fahrenheit"
-#        type: "boolean"
-#        default: false
-#  }
-#  RFLinkWeatherStation: {
-#    title: "RFLinkWeatherStation config options"
-#    type: "object"
-#    extensions: ["xLink", "xAttributeOptions"]
-#    properties:
-#      values:
-#        type: "array"
-#        default: ["temperature", "humidity"]
-#        format: "table"
-#        items:
-#          type: "string"
-#      protocols:
-#        description: "The protocols to use."
-#        type: "array"
-#        default: []
-#        format: "table"
-#        items:
-#          type: "object"
-#          properties:
-#            name:
-#              type: "string"
-#            options:
-#              description: "The protocol options"
-#              type: "object"
-#  }
 #  RFLinkGenericSensor: {
 #    title: "RFLinkGenericSensor config options"
 #    type: "object"
@@ -264,6 +202,10 @@ module.exports = {
             switch:
               description: "The button id of the switch"
               type: "string"
+      invert:
+        description: "Trigger on OFF signal. Useful for pir sensors that emit OFF instead of ON signal"
+        type: "boolean"
+        default: false
       autoReset:
         description: "Reset the state after resetTime. Useful for pir sensors that don't emit a absent signal"
         type: "boolean"
@@ -272,5 +214,30 @@ module.exports = {
         description: "Time after that the presence value is reset to absent."
         type: "integer"
         default: 10000
-  }
+  },
+  RFLinkData: {
+    title: "RFLink config options"
+    type: "object"
+    extensions: ["xLink", "xAttributeOptions"]
+    properties:
+      values:
+        type: "array"
+        default: ["temp", "hum"]
+        format: "table"
+        items:
+          type: "string"
+      protocols:
+        description: "The data protocols to use."
+        type: "array"
+        default: []
+        format: "table"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            id:
+              description: "The device id"
+              type: "string"
+  },
 }

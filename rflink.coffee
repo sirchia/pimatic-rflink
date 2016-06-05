@@ -81,8 +81,7 @@ module.exports = (env) ->
       deviceClasses = [
         RFLinkSwitch
         RFLinkDimmer
-#        RFLinkTemperature
-#        RFLinkWeatherStation
+        RFLinkData
         RFLinkPir
         RFLinkContactSensor
 #        RFLinkShutter
@@ -312,7 +311,10 @@ module.exports = (env) ->
       @board.on('rf', (event) =>
         for p in @config.protocols
           if @protocol.switchEventMatches(event, p)
-            @_setPresence(event.cmd.state)
+            if @config.invert is false
+              @_setPresence(event.cmd.state)
+            else
+              @_setPresence(!event.cmd.state)  
             if @config.autoReset is true
               @_resetPresenceTimeout = setTimeout(resetPresence, @config.resetTime)
       )  
@@ -320,315 +322,329 @@ module.exports = (env) ->
 
     getPresence: -> Promise.resolve @_presence
 
-#
-#  class RFLinkTemperature extends env.devices.TemperatureSensor
-#
-#    constructor: (@config, lastState, @board) ->
-#      @id = config.id
-#      @name = config.name
-#      @_temperatue = lastState?.temperature?.value
-#      @_humidity = lastState?.humidity?.value
-#      @_lowBattery = lastState?.lowBattery?.value
-#      @_battery = lastState?.battery?.value
-#
-#      hasTemperature = false
-#      hasHumidity = false
-#      hasLowBattery = false # boolean battery indicator
-#      hasBattery = false # numeric battery indicator
-#      isFahrenheit = config.isFahrenheit
-#      for p in config.protocols
-#        _protocol = Board.getRfProtocol(p.name)
-#        unless _protocol?
-#          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
-#        unless _protocol.type is "weather"
-#          throw new Error("\"#{p.name}\" is not a weather protocol.")
-#        hasTemperature = true if _protocol.values.temperature?
-#        hasHumidity = true if _protocol.values.humidity?
-#        hasLowBattery = true if _protocol.values.lowBattery?
-#        hasBattery = true if  _protocol.values.battery?
-#      @attributes = {}
-#
-#      if hasTemperature
-#        if isFahrenheit then tempUnit = '°F'
-#        else tempUnit = '°C'
-#        @attributes.temperature = {
-#          description: "the measured temperature"
-#          type: "number"
-#          unit: tempUnit
-#          acronym: 'T'
-#        }
-#
-#      if hasHumidity
-#        @attributes.humidity = {
-#          description: "the measured humidity"
-#          type: "number"
-#          unit: '%'
-#          acronym: 'RH'
-#        }
-#
-#      if hasLowBattery
-#        @attributes.lowBattery = {
-#          description: "the battery status"
-#          type: "boolean"
-#          labels: ["low", 'ok']
-#          icon:
-#            noText: true
-#            mapping: {
-#              'icon-battery-filled': false
-#              'icon-battery-empty': true
-#            }
-#        }
-#      if hasBattery
-#        @attributes.battery = {
-#          description: "the battery status"
-#          type: "number"
-#          unit: '%'
-#          displaySparkline: false
-#          icon:
-#            noText: true
-#            mapping: {
-#              'icon-battery-empty': 0
-#              'icon-battery-fuel-1': [0, 20]
-#              'icon-battery-fuel-2': [20, 40]
-#              'icon-battery-fuel-3': [40, 60]
-#              'icon-battery-fuel-4': [60, 80]
-#              'icon-battery-fuel-5': [80, 100]
-#              'icon-battery-filled': 100
-#            }
-#        }
-#
-#      @board.on('rf', (event) =>
-#        for p in @config.protocols
-#          match = doesProtocolMatch(event, p)
-#          if match
-#            now = (new Date()).getTime()
-#            timeDelta = (
-#              if @_lastReceiveTime? then (now - @_lastReceiveTime)
-#              else 9999999
-#            )
-#            # discard value if it is the same and was received just under two second ago
-#            if timeDelta < 2000
-#              return
-#
-#            if event.values.temperature?
-#              variableManager = rflinkPlugin.framework.variableManager
-#              processing = @config.processingTemp or "$value"
-#              info = variableManager.parseVariableExpression(
-#                processing.replace(/\$value\b/g, event.values.temperature)
-#              )
-#              variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-#                @_temperatue = value
-#                @emit "temperature", @_temperatue
-#              )
-#            if event.values.humidity?
-#              variableManager = rflinkPlugin.framework.variableManager
-#              processing = @config.processingHum or "$value"
-#              info = variableManager.parseVariableExpression(
-#                processing.replace(/\$value\b/g, event.values.humidity)
-#              )
-#              variableManager.evaluateNumericExpression(info.tokens).then( (value) =>
-#                @_humidity = value
-#                @emit "humidity", @_humidity
-#              )
-#            if event.values.lowBattery?
-#              @_lowBattery = event.values.lowBattery
-#              @emit "lowBattery", @_lowBattery
-#            if event.values.battery?
-#              @_battery = event.values.battery
-#              @emit "battery", @_battery
-#            @_lastReceiveTime = now
-#      )
-#      super()
-#
-#    getTemperature: -> Promise.resolve @_temperatue
-#    getHumidity: -> Promise.resolve @_humidity
-#    getLowBattery: -> Promise.resolve @_lowBattery
-#    getBattery: -> Promise.resolve @_battery
-#
-#  class RFLinkWeatherStation extends env.devices.Sensor
-#
-#    constructor: (@config, lastState, @board) ->
-#      @id = config.id
-#      @name = config.name
-#      @_windGust = lastState?.windGust?.value or 0
-#      @_avgAirspeed = lastState?.avgAirspeed?.value or 0
-#      @_windDirection = lastState?.windDirection?.value or 0
-#      @_temperatue = lastState?.temperature?.value or 0
-#      @_humidity = lastState?.humidity?.value or 0
-#      @_rain = lastState?.rain?.value or 0
-#
-#      hasWindGust = false
-#      hasAvgAirspeed = false
-#      hasWindDirection = false
-#      hasTemperature = false
-#      hasHumidity = false
-#      hasRain = false
-#      for p in config.protocols
-#        _protocol = Board.getRfProtocol(p.name)
-#        unless _protocol?
-#          throw new Error("Could not find a protocol with the name \"#{p.name}\".")
-#        unless _protocol.type is "weather"
-#          throw new Error("\"#{p.name}\" is not a weather protocol.")
-#        hasRain = true if _protocol.values.rain?
-#        hasHumidity = true if _protocol.values.humidity?
-#        hasTemperature = true if _protocol.values.temperature?
-#        hasWindDirection = true if _protocol.values.windDirection?
-#        hasAvgAirspeed = true if _protocol.values.avgAirspeed?
-#        hasWindGust = true if _protocol.values.windGust?
-#
-#      hasNoAttributes = (
-#        !hasRain and !hasHumidity and !hasTemperature and
-#        !hasWindGust and !hasAvgAirspeed and !hasWindDirection
-#      )
-#      if hasNoAttributes
-#        throw new Error(
-#          "No values to show available. The config.protocols and the config.values doesn't match."
-#        )
-#
-#      @attributes = {}
-#
-#      for s in config.values
-#        switch s
-#          when "rain"
-#            if hasRain
-#              if !@attributes.rain?
-#                @attributes.rain = {
-#                  description: "the measured fall of rain"
-#                  type: "number"
-#                  unit: 'mm'
-#                  acronym: 'RAIN'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: rain is defined but no protocol in config contains rain data!"
-#              )
-#          when "humidity"
-#            if hasHumidity
-#              if !@attributes.humidity?
-#                @attributes.humidity = {
-#                  description: "the measured humidity"
-#                  type: "number"
-#                  unit: '%'
-#                  acronym: 'RH'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: humidity is defined but no protocol in config contains humidity data!"
-#              )
-#          when "temperature"
-#            if hasTemperature
-#              if !@attributes.temperature?
-#                @attributes.temperature = {
-#                  description: "the measured temperature"
-#                  type: "number"
-#                  unit: '°C'
-#                  acronym: 'T'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: temperature is defined but no protocol in config contains " +
-#                "temperature data!"
-#              )
-#          when "windDirection"
-#            if hasWindDirection
-#              if !@attributes.windDirection?
-#                @attributes.windDirection = {
-#                  description: "the measured wind direction"
-#                  type: "string"
-#                  acronym: 'WIND'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: windDirection is defined but no protocol in config contains " +
-#                "windDirection data!"
-#              )
-#          when "avgAirspeed"
-#            if hasAvgAirspeed
-#              if !@attributes.avgAirspeed?
-#                @attributes.avgAirspeed = {
-#                  description: "the measured average airspeed"
-#                  type: "number"
-#                  unit: 'm/s'
-#                  acronym: 'SPEED'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: avgAirspeed is defined but no protocol in config contains " +
-#                "avgAirspeed data!"
-#              )
-#          when "windGust"
-#            if hasWindGust
-#              if !@attributes.windGust?
-#                @attributes.windGust = {
-#                  description: "the measured wind gust"
-#                  type: "number"
-#                  unit: 'm/s'
-#                  acronym: 'GUST'
-#                }
-#            else
-#              env.logger.warn(
-#                "#{@id}: windGust is defined but no protocol in config contains windGust data!"
-#              )
-#          else
-#            throw new Error(
-#              "Values should be one of: " +
-#              "rain, humidity, temperature, windDirection, avgAirspeed, windGust"
-#            )
-#
-#      @board.on('rf', (event) =>
-#        for p in @config.protocols
-#          match = doesProtocolMatch(event, p)
-#          if match
-#            now = (new Date()).getTime()
-#            timeDelta = (
-#              if @_lastReceiveTime? then (now - @_lastReceiveTime)
-#              else 9999999
-#            )
-#            if timeDelta < 2000
-#              return
-#            if event.values.windGust?
-#              @_windGust = event.values.windGust
-#              # discard value if it is the same and was received just under two second ago
-#              @emit "windGust", @_windGust
-#            if event.values.avgAirspeed?
-#              @_avgAirspeed = event.values.avgAirspeed
-#              # discard value if it is the same and was received just under two second ago
-#              @emit "avgAirspeed", @_avgAirspeed
-#            if event.values.windDirection?
-#              @_windDirection = event.values.windDirection
-#              # discard value if it is the same and was received just under two second ago
-#              dir = @_directionToString(@_windDirection)
-#              @emit "windDirection", "#{@_windDirection}°(#{dir})"
-#            if event.values.temperature?
-#              @_temperatue = event.values.temperature
-#              # discard value if it is the same and was received just under two second ago
-#              @emit "temperature", @_temperatue
-#            if event.values.humidity?
-#              @_humidity = event.values.humidity
-#              # discard value if it is the same and was received just under two second ago
-#              @emit "humidity", @_humidity
-#            if event.values.rain?
-#              @_rain = event.values.rain
-#              # discard value if it is the same and was received just under two second ago
-#              @emit "rain", @_rain
-#            @_lastReceiveTime = now
-#      )
-#      super()
-#
-#    _directionToString: (direction)->
-#      if direction<=360 and direction>=0
-#        direction = Math.round(direction / 45)
-#        labels = ["N","NE","E","SE","S","SW","W","NW","N"]
-#      return labels[direction]
-#
-#    getWindDirection: -> Promise.resolve @_windDirection
-#    getAvgAirspeed: -> Promise.resolve @_avgAirspeed
-#    getWindGust: -> Promise.resolve @_windGust
-#    getRain: -> Promise.resolve @_rain
-#    getTemperature: -> Promise.resolve @_temperatue
-#    getHumidity: -> Promise.resolve @_humidity
-#
-#
+  class RFLinkData extends env.devices.Sensor
+
+    constructor: (@config, lastState, @board, @_pluginConfig, @protocol) ->
+      @id = config.id
+      @name = config.name
+      @_temp = lastState?.temp?.value or 0
+      @_hum = lastState?.hum?.value or 0
+      @_baro = lastState?.baro?.value or 0
+      @_hstatus = lastState?.hstatus?.value or 0
+      @_bforecast = lastState?.bforecast?.value or 0
+      @_uv = lastState?.uv?.value or 0
+      @_lux = lastState?.lux?.value or 0
+      @_rain = lastState?.rain?.value or 0
+      @_raintot = lastState?.raintot?.value or 0
+      @_winsp = lastState?.winsp?.value or 0
+      @_awinsp = lastState?.awinsp?.value or 0
+      @_wings = lastState?.wings?.value or 0
+      @_windir = lastState?.windir?.value or 0
+      @_winchl = lastState?.winchl?.value or 0
+      @_wintmp = lastState?.wintmp?.value or 0
+      @_co2 = lastState?.co2?.value or 0
+      @_sound = lastState?.sound?.value or 0
+      @_kwatt = lastState?.kwatt?.value or 0
+      @_watt = lastState?.watt?.value or 0
+      @_dist = lastState?.dist?.value or 0
+      @_meter = lastState?.meter?.value or 0
+      @_volt = lastState?.volt?.value or 0
+      @_current = lastState?.current?.value or 0
+      
+      @attributes = {}
+      
+      for s in @config.values
+        switch s
+          when "temp"
+            if !@attributes.temp?
+              @attributes.temp = {
+                description: "the measured temperature"
+                type: "number"
+                unit: '°C'
+                acronym: 'T'
+                }
+          when "hum"
+            if !@attributes.hum?
+              @attributes.hum = {
+                description: "the measured humidity"
+                type: "number"
+                unit: '%'
+                acronym: 'RH'
+                }
+          when "baro"
+            if !@attributes.baro?
+              @attributes.baro = {
+                description: "the measured barometric pressure"
+                type: "number"
+                unit: 'mbar'
+                acronym: 'PB'
+                }
+          when "hstatus"
+            if !@attributes.hstatus?
+              @attributes.hstatus = {
+                description: "indication of the weather 0=Normal, 1=Comfortable, 2=Dry, 3=Wet"
+                type: "number"
+                unit: ''
+                acronym: 'ACTUAL'
+                }
+          when "bforcast"
+            if !@attributes.bforcast?
+              @attributes.bforcast = {
+                description: "prediction of the weather 0=No Info/Unknown, 1=Sunny, 2=Partly Cloudy, 3=Cloudy, 4=Rain"
+                type: "number"
+                unit: ''
+                acronym: 'FORCAST'
+                }
+          when "uv"
+            if !@attributes.uv?
+              @attributes.uv = {
+                description: "the measured UV intensity"
+                type: "number"
+                unit: ''
+                acronym: 'UV'
+                }
+          when "lux"
+            if !@attributes.lux?
+              @attributes.lux = {
+                description: "the measured light intensity"
+                type: "number"
+                unit: 'lx'
+                acronym: 'LUM'
+                }
+          when "rain"
+            if !@attributes.rain?
+              @attributes.rain = {
+                description: "the measured rain rate"
+                type: "number"
+                unit: 'mm'
+                acronym: 'RAIN'
+                }
+          when "raintot"
+            if !@attributes.raintot?
+              @attributes.raintot = {
+                description: "the measured total rain rate"
+                type: "number"
+                unit: 'mm'
+                acronym: 'RAINT'
+                }
+          when "winsp"
+            if !@attributes.winsp?
+              @attributes.winsp = {
+                description: "the measured wind speed"
+                type: "number"
+                unit: 'km/h'
+                acronym: 'WIND'
+                }
+          when "awinsp"
+            if !@attributes.winsp?
+              @attributes.winsp = {
+                description: "the measured average wind speed"
+                type: "number"
+                unit: 'km/h'
+                acronym: 'MWIND'
+                }
+          when "wings"
+            if !@attributes.wings?
+              @attributes.wings = {
+                description: "the measured wind gust"
+                type: "number"
+                unit: 'km/h'
+                acronym: 'GUST'
+                }
+          when "windir"
+            if !@attributes.windir?
+              @attributes.windir = {
+                description: "the measured wind direction 0-360"
+                type: "number"
+                unit: ''
+                acronym: 'WDIR'
+                }
+          when "winchil"
+            if !@attributes.winchil?
+              @attributes.winchil = {
+                description: "the measured wind chill"
+                type: "number"
+                unit: '°C'
+                acronym: 'CHILL'
+                }
+          when "wintmp"
+            if !@attributes.wintmp?
+              @attributes.wintmp = {
+                description: "the measured wind temperature"
+                type: "number"
+                unit: '°C'
+                acronym: 'WTEMP'
+                }
+          when "co2"
+            if !@attributes.co2?
+              @attributes.co2 = {
+                description: "the measured CO2 air quality"
+                type: "number"
+                unit: ''
+                acronym: 'CO2'
+                }
+          when "sound"
+            if !@attributes.sound?
+              @attributes.sound = {
+                description: "the measured noise level"
+                type: "number"
+                unit: ''
+                acronym: 'SOUND'
+                }
+          when "kwatt"
+            if !@attributes.kwatt?
+              @attributes.kwatt = {
+                description: "the measured power value"
+                type: "number"
+                unit: 'kW'
+                acronym: 'POWER'
+                }
+          when "watt"
+            if !@attributes.watt?
+              @attributes.watt = {
+                description: "the measured power value"
+                type: "number"
+                unit: 'W'
+                acronym: 'POWER'
+                }
+          when "dist"
+            if !@attributes.dist?
+              @attributes.dist = {
+                description: "the measured distance value"
+                type: "number"
+                unit: 'mm'
+                acronym: 'DISTANCE'
+                }
+          when "meter"
+            if !@attributes.meter?
+              @attributes.meter = {
+                description: "the measured meter value"
+                type: "number"
+                unit: ''
+                acronym: 'METER'
+                }
+          when "volt"
+            if !@attributes.volt?
+              @attributes.volt = {
+                description: "the measured voltage value"
+                type: "number"
+                unit: 'V'
+                acronym: 'U'
+                }
+          when "current"
+            if !@attributes.current?
+              @attributes.current = {
+                description: "the measured current value"
+                type: "number"
+                unit: 'A'
+                acronym: 'I'
+                }
+          else
+            throw new Error(
+              "Values should be one of: temp, hum, baro, hstatus, uv, lux, rain, raintot, winsp, awinsp, wings, windir, winchl, wintmp, co2, sound, kwatt, watt, dist, meter, volt, current"
+            )
+        
+        
+      @board.on('rf', (event) =>
+        for p in @config.protocols
+          if @protocol.eventMatches(event, p)
+            if event.temp?
+              @_temp = event.temp
+              @emit "temp", @_temp
+            if event.hum?
+              @_hum = event.hum
+              @emit "hum", @_hum
+            if event.baro?
+              @_baro = event.baro
+              @emit "baro", @_baro
+            if event.hstatus?
+              @_hstatus = event.hstatus
+              @emit "hstatus", @_hstatus
+            if event.bforecast?
+              @_bforecast = event.bforecast
+              @emit "bforecast", @_bforecast
+            if event.uv?
+              @_uv = event.uv
+              @emit "uv", @_uv
+            if event.lux?
+              @_lux = event.lux
+              @emit "lux", @_lux
+            if event.rain?
+              @_rain = event.rain
+              @emit "rain", @_rain
+            if event.raintot?
+              @_raintot = event.raintot
+              @emit "raintot", @_raintot
+            if event.winsp?
+              @_winsp = event.winsp
+              @emit "winsp", @_winsp
+            if event.awinsp?
+              @_awinsp = event.awinsp
+              @emit "awinsp", @_awinsp
+            if event.wings?
+              @_wings = event.wings
+              @emit "wings", @_wings
+            if event.windir?
+              @_windir = event.windir
+              @emit "windir", @_windir
+            if event.winchl?
+              @_winchl = event.winchl
+              @emit "winchl", @_winchl
+            if event.wintmp?
+              @_wintmp = event.wintmp
+              @emit "wintmp", @_wintmp
+            if event.co2?
+              @_co2 = event.co2
+              @emit "co2", @_co2
+            if event.sound?
+              @_sound = event.sound
+              @emit "sound", @_sound
+            if event.kwatt?
+              @_kwatt = event.kwatt
+              @emit "kwatt", @_kwatt
+            if event.watt?
+              @_watt = event.watt
+              @emit "watt", @_watt
+            if event.dist?
+              @_dist = event.dist
+              @emit "dist", @_dist
+            if event.meter?
+              @_meter = event.meter
+              @emit "meter", @_meter
+            if event.volt?
+              @_volt = event.volt
+              @emit "volt", @_volt
+            if event.current?
+              @_current = event.current
+              @emit "current", @_current     
+      )  
+      super()
+
+    getTemp: -> Promise.resolve @_temp
+    getHum: -> Promise.resolve @_hum
+    getBaro: -> Promise.resolve @_baro
+    getHstatus: -> Promise.resolve @_hstatus
+    getBforecast: -> Promise.resolve @_bforecast
+    getUv: -> Promise.resolve @_uv
+    getLux: -> Promise.resolve @_lux
+    getRain: -> Promise.resolve @_rain
+    getRaintot: -> Promise.resolve @_raintot
+    getWinsp: -> Promise.resolve @_winsp
+    getAwinsp: -> Promise.resolve @_awinsp
+    getWings: -> Promise.resolve @_wings
+    getWindir: -> Promise.resolve @_windir
+    getWinchl: -> Promise.resolve @_winchl
+    getWintmp: -> Promise.resolve @_wintmp
+    getCo2: -> Promise.resolve @_co2
+    getSound: -> Promise.resolve @_sound
+    getKwatt: -> Promise.resolve @_kwatt
+    getWatt: -> Promise.resolve @_watt
+    getDist: -> Promise.resolve @_dist
+    getMeter: -> Promise.resolve @_meter
+    getVolt: -> Promise.resolve @_volt
+    getCurrent: -> Promise.resolve @_current
+ 
+
 #  class RFLinkGenericSensor extends env.devices.Sensor
 #
 #    constructor: (@config, lastState, @board) ->
