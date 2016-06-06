@@ -10,6 +10,7 @@ but this plugin is currently limited to only supports the following devices:
 - Dimmers
 - PIR sensors
 - Contact sensors 
+- Generic data sensors for temperature, wind, barometric pressure and many more
 
 Support for other devices may be added in the future.
 
@@ -130,6 +131,7 @@ is used for sending or receiving. Default is `true` for both.
   "name": "Movement",
   "class": "RFLinkPir",
   "autoReset": false,
+  "invert": false,
   "protocols": [
     {
       "name": "NewKaku",
@@ -139,3 +141,25 @@ is used for sending or receiving. Default is `true` for both.
   ]
 },
 ```
+
+
+### Generic data sensor example:
+Values represent the (lowercase) attributes as sent by the RFLink device. 
+```json
+{ 
+  "id": "TemperatuurWoonkamer",
+  "name": "Temperatuur Woonkamer", 
+  "class": "RFLinkData", 
+  "protocols": [
+    {
+      "name": "Xiron",
+      "id": "C901" 
+    }
+  ],
+  "values": [
+    "temp",
+    "hum"
+  ]
+},
+```
+
