@@ -24,7 +24,13 @@ class Protocol extends events.EventEmitter
         result.all = value.indexOf('ALL') > -1
         result.state = value.indexOf('ON') > -1
       return result
-    set_level: (value) -> return Math.round(parseInt(value) * 99 / 15) + 1 # 1-100 %
+    set_level: (value) ->
+      result = Math.round(parseInt(value) * 99 / 15) + 1 # 1-100 %
+      result = Math.max(1, Math.min(100, result))
+      result = parseFloat(result)
+      if isNaN(result)
+        result = 0
+      return result
     temp: (value) -> # celcius
       result = parseInt(value, 16)
       if result >= 32768
