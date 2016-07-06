@@ -89,6 +89,10 @@ module.exports = {
             switch:
               description: "The button id of the switch"
               type: "string"
+      invert:
+        description: "Trigger on OFF signal. Useful for pir sensors that emit OFF instead of ON signal"
+        type: "boolean"
+        default: false
       autoReset:
         description: "Reset the state after resetTime. Useful for pir sensors that emit a absent signal"
         type: "boolean"

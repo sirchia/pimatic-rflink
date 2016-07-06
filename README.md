@@ -114,6 +114,7 @@ is used for sending or receiving. Default is `true` for both.
   "name": "Window",
   "class": "RFLinkContactSensor",
   "autoReset": false,
+  "invert": false,
   "protocols": [
     {
       "name": "NewKaku",

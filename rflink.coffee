@@ -238,7 +238,10 @@ module.exports = (env) ->
       @board.on('rf', (event) =>
         for p in @config.protocols
           if @protocol.switchEventMatches(event, p)
-            @_setContact(event.cmd.state)
+            if @config.invert is false
+              @_setContact(event.cmd.state)
+            else
+              @_setContact(!event.cmd.state)
             if @config.autoReset is true
               clearTimeout(@_resetContactTimeout)
               @_resetContactTimeout = setTimeout(( =>
