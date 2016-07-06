@@ -145,7 +145,32 @@ is used for sending or receiving. Default is `true` for both.
 
 
 ### Generic data sensor example:
-Values represent the (lowercase) attributes as sent by the RFLink device. 
+Values represent the (lowercase) attributes as sent by the RFLink device.
+Currently, the following values are supported:
+- temp
+- hum
+- baro
+- hstatus
+- bforecast
+- uv
+- lux
+- bat
+- rain
+- raintot
+- winsp
+- awinsp
+- wings
+- windir
+- winchil
+- wintmp
+- co2
+- sound
+- kwatt
+- watt
+- dist
+- meter
+- volt
+- current
 ```json
 { 
   "id": "TemperatuurWoonkamer",

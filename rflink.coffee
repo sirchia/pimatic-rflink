@@ -337,6 +337,7 @@ module.exports = (env) ->
       @_bforecast = lastState?.bforecast?.value or 0
       @_uv = lastState?.uv?.value or 0
       @_lux = lastState?.lux?.value or 0
+      @_bat = lastState?.bat?.value or ""
       @_rain = lastState?.rain?.value or 0
       @_raintot = lastState?.raintot?.value or 0
       @_winsp = lastState?.winsp?.value or 0
@@ -365,7 +366,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: '°C'
                 acronym: 'T'
-                }
+              }
           when "hum"
             if !@attributes.hum?
               @attributes.hum = {
@@ -373,7 +374,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: '%'
                 acronym: 'RH'
-                }
+              }
           when "baro"
             if !@attributes.baro?
               @attributes.baro = {
@@ -381,7 +382,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'mbar'
                 acronym: 'PB'
-                }
+              }
           when "hstatus"
             if !@attributes.hstatus?
               @attributes.hstatus = {
@@ -389,15 +390,15 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'ACTUAL'
-                }
-          when "bforcast"
-            if !@attributes.bforcast?
-              @attributes.bforcast = {
+              }
+          when "bforecast"
+            if !@attributes.bforecast?
+              @attributes.bforecast = {
                 description: "prediction of the weather 0=No Info/Unknown, 1=Sunny, 2=Partly Cloudy, 3=Cloudy, 4=Rain"
                 type: "number"
                 unit: ''
-                acronym: 'FORCAST'
-                }
+                acronym: 'FORECAST'
+              }
           when "uv"
             if !@attributes.uv?
               @attributes.uv = {
@@ -405,7 +406,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'UV'
-                }
+              }
           when "lux"
             if !@attributes.lux?
               @attributes.lux = {
@@ -413,7 +414,15 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'lx'
                 acronym: 'LUM'
-                }
+              }
+          when "bat"
+            if !@attributes.bat?
+              @attributes.bat = {
+                description: "the battery status"
+                type: "string"
+                unit: ''
+                acronym: 'BAT'
+              }
           when "rain"
             if !@attributes.rain?
               @attributes.rain = {
@@ -421,7 +430,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'mm'
                 acronym: 'RAIN'
-                }
+              }
           when "raintot"
             if !@attributes.raintot?
               @attributes.raintot = {
@@ -429,7 +438,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'mm'
                 acronym: 'RAINT'
-                }
+              }
           when "winsp"
             if !@attributes.winsp?
               @attributes.winsp = {
@@ -437,7 +446,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'km/h'
                 acronym: 'WIND'
-                }
+              }
           when "awinsp"
             if !@attributes.winsp?
               @attributes.winsp = {
@@ -445,7 +454,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'km/h'
                 acronym: 'MWIND'
-                }
+              }
           when "wings"
             if !@attributes.wings?
               @attributes.wings = {
@@ -453,7 +462,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'km/h'
                 acronym: 'GUST'
-                }
+              }
           when "windir"
             if !@attributes.windir?
               @attributes.windir = {
@@ -461,7 +470,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'WDIR'
-                }
+              }
           when "winchil"
             if !@attributes.winchil?
               @attributes.winchil = {
@@ -469,7 +478,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: '°C'
                 acronym: 'CHILL'
-                }
+              }
           when "wintmp"
             if !@attributes.wintmp?
               @attributes.wintmp = {
@@ -477,7 +486,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: '°C'
                 acronym: 'WTEMP'
-                }
+              }
           when "co2"
             if !@attributes.co2?
               @attributes.co2 = {
@@ -485,7 +494,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'CO2'
-                }
+              }
           when "sound"
             if !@attributes.sound?
               @attributes.sound = {
@@ -493,7 +502,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'SOUND'
-                }
+              }
           when "kwatt"
             if !@attributes.kwatt?
               @attributes.kwatt = {
@@ -501,7 +510,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'kW'
                 acronym: 'POWER'
-                }
+              }
           when "watt"
             if !@attributes.watt?
               @attributes.watt = {
@@ -509,7 +518,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'W'
                 acronym: 'POWER'
-                }
+              }
           when "dist"
             if !@attributes.dist?
               @attributes.dist = {
@@ -517,7 +526,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'mm'
                 acronym: 'DISTANCE'
-                }
+              }
           when "meter"
             if !@attributes.meter?
               @attributes.meter = {
@@ -525,7 +534,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: ''
                 acronym: 'METER'
-                }
+              }
           when "volt"
             if !@attributes.volt?
               @attributes.volt = {
@@ -533,7 +542,7 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'V'
                 acronym: 'U'
-                }
+              }
           when "current"
             if !@attributes.current?
               @attributes.current = {
@@ -541,10 +550,10 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'A'
                 acronym: 'I'
-                }
+              }
           else
             throw new Error(
-              "Values should be one of: temp, hum, baro, hstatus, uv, lux, rain, raintot, winsp, awinsp, wings, windir, winchl, wintmp, co2, sound, kwatt, watt, dist, meter, volt, current"
+              "Values should be one of: temp, hum, baro, hstatus, bforecast, uv, lux, bat, rain, raintot, winsp, awinsp, wings, windir, winchil, wintmp, co2, sound, kwatt, watt, dist, meter, volt, current"
             )
 
 
@@ -572,6 +581,9 @@ module.exports = (env) ->
             if event.lux?
               @_lux = event.lux
               @emit "lux", @_lux
+            if event.bat?
+              @_bat = event.bat
+              @emit "bat", @_bat
             if event.rain?
               @_rain = event.rain
               @emit "rain", @_rain
@@ -630,6 +642,7 @@ module.exports = (env) ->
     getBforecast: -> Promise.resolve @_bforecast
     getUv: -> Promise.resolve @_uv
     getLux: -> Promise.resolve @_lux
+    getBat: -> Promise.resolve @_bat
     getRain: -> Promise.resolve @_rain
     getRaintot: -> Promise.resolve @_raintot
     getWinsp: -> Promise.resolve @_winsp
