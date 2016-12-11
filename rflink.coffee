@@ -167,13 +167,17 @@ module.exports = (env) ->
       @name = @config.name
       @_state = lastState?.state?.value
 
-      @board.on('rf', (event) =>
+      @board.on('rf', @rfListener = (event) =>
         for p in @config.protocols
           unless p.receive is false
             if @protocol.switchEventMatches(event, p)
               @emit('rf', event.cmd.state) # used by the RFEventPredicateHandler
               @_setState(event.cmd.state)
         )
+      super()
+
+    destroy: () ->
+      @board.removeListener 'rf', @rfListener
       super()
 
     _sendStateToSwitches: sendToSwitchesMixin
@@ -196,7 +200,7 @@ module.exports = (env) ->
       @_lastdimlevel = lastState?.lastdimlevel?.value or 100
       @_state = lastState?.state?.value or off
 
-      @board.on('rf', (event) =>
+      @board.on('rf', @rfListener = (event) =>
         for p in @config.protocols
           unless p.receive is false
             if @protocol.switchEventMatches(event, p)
@@ -210,6 +214,10 @@ module.exports = (env) ->
                 else
                   @_setDimlevel(@_lastdimlevel)
         )
+      super()
+
+    destroy: () ->
+      @board.removeListener 'rf', @rfListener
       super()
 
     _sendLevelToDimmers: sendToDimmersMixin
@@ -235,7 +243,7 @@ module.exports = (env) ->
       @name = @config.name
       @_contact = lastState?.contact?.value or false
 
-      @board.on('rf', (event) =>
+      @board.on('rf', @rfListener = (event) =>
         for p in @config.protocols
           if @protocol.switchEventMatches(event, p)
             if @config.invert is false
@@ -248,6 +256,10 @@ module.exports = (env) ->
                 @_setContact(!event.cmd.state)
               ), @config.resetTime)
       )  
+      super()
+
+    destroy: () ->
+      @board.removeListener 'rf', @rfListener
       super()
 
 #  class RFLinkShutter extends env.devices.ShutterController
@@ -311,7 +323,7 @@ module.exports = (env) ->
         @_setPresence(no)
       )
       
-      @board.on('rf', (event) =>
+      @board.on('rf', @rfListener = (event) =>
         for p in @config.protocols
           if @protocol.switchEventMatches(event, p)
             if @config.invert is false
@@ -321,6 +333,10 @@ module.exports = (env) ->
             if @config.autoReset is true
               @_resetPresenceTimeout = setTimeout(resetPresence, @config.resetTime)
       )  
+      super()
+
+    destroy: () ->
+      @board.removeListener 'rf', @rfListener
       super()
 
     getPresence: -> Promise.resolve @_presence
@@ -584,7 +600,7 @@ module.exports = (env) ->
             )
 
 
-      @board.on('rf', (event) =>
+      @board.on('rf', @rfListener = (event) =>
         for p in @config.protocols
           if @protocol.eventMatches(event, p)
             if event.temp?
@@ -669,6 +685,10 @@ module.exports = (env) ->
               @_volt = event.volt
               @emit "volt", @_volt
       )
+      super()
+
+    destroy: () ->
+      @board.removeListener 'rf', @rfListener
       super()
 
     getTemp: -> Promise.resolve @_temp
