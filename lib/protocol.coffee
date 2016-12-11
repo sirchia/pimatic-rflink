@@ -142,8 +142,8 @@ class Protocol extends events.EventEmitter
       event.debug = labels.concat(";")
       return event
 
-    event.ackResponse = true for ack in Protocol._ACK when event.name.indexOf(ack) > -1
-    event.ackResponse = false for nack in Protocol._NACK when event.name.indexOf(nack) > -1
+    event.ackResponse = true for ack in Protocol._ACK when event.name and event.name.indexOf(ack) > -1
+    event.ackResponse = false for nack in Protocol._NACK when event.name and event.name.indexOf(nack) > -1
 
     if not event.ackResponse?
       for label in labels

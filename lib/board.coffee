@@ -114,6 +114,10 @@ class Board extends events.EventEmitter
   _processData: (data) ->
     event = @protocol.decodeLine data
 
+    if not event.name
+      @emit 'debug', "Ignoring seemingly invalid message"
+      return
+
     # continue if we are already ready
     unless @connectionReady.isFulfilled()
       # continue if this line would make us ready and store state
@@ -180,7 +184,10 @@ class Board extends events.EventEmitter
 
   _handleAcknowledge: (event) ->
     resolver = @_awaitingAck.splice(0, 1)[0]
-    resolver(event)
+    if resolver?
+      resolver(event)
+    else
+      @emit 'debug', 'Received unexpected (duplicate?) acknowledge, ignored...'
 
   _determineReconnectInterval: ->
     if @reconnectInterval?
