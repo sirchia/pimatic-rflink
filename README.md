@@ -156,6 +156,7 @@ Currently, the following values are supported:
 - lux
 - bat
 - rain
+- rainrate
 - raintot
 - winsp
 - awinsp
@@ -167,10 +168,12 @@ Currently, the following values are supported:
 - sound
 - kwatt
 - watt
+- current
+- current2
+- current3
 - dist
 - meter
 - volt
-- current
 ```json
 { 
   "id": "TemperatuurWoonkamer",

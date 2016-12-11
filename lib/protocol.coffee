@@ -43,25 +43,29 @@ class Protocol extends events.EventEmitter
     uv: (value) -> return parseInt(value, 16)
     lux: (value) -> return parseInt(value, 16)
     bat: (value) -> return value # OK/LOW
-    rain: (value) -> return parseInt(value, 16) # mm
-    raintot: (value) -> return parseInt(value, 16) # mm
+    rain: (value) -> return parseInt(value, 16) / 10.0 # mm
+    rainrate: (value) -> return parseInt(value, 16) / 10.0 # mm
+    raintot: (value) -> return parseInt(value, 16) / 10.0 # mm
     winsp: (value) -> return parseInt(value, 16) / 10.0 # km. p/h
     awinsp: (value) -> return parseInt(value, 16) / 10.0 # km. p/h
     wings: (value) -> return parseInt(value, 16) # km. p/h
-    windir: (value) -> return parseInt(value) * 100 / 15 # 0-360 degrees
-    winchl: (value) -> return parseInt(value, 16)
-    wintmp: (value) -> return parseInt(value, 16)
+    windir: (value) -> return parseInt(value) * 360 / 15.0 # 0-360 degrees
+    winchl: (value) -> return @_DECODE.temp(value) # celcius
+    wintmp: (value) -> return @_DECODE.temp(value) # celcius
     chime: (value) -> return parseInt(value)
     smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
     co2: (value) -> return parseInt(value)
     sound: (value) -> return parseInt(value)
-    kwatt: (value) -> return parseInt(value)
-    watt: (value) -> return parseInt(value)
+    kwatt: (value) -> return parseInt(value, 16)
+    watt: (value) -> return parseInt(value, 16)
+    current: (value) -> return parseInt(value)
+    current2: (value) -> return parseInt(value)
+    current3: (value) -> return parseInt(value)
     dist: (value) -> return parseInt(value)
     meter: (value) -> return parseInt(value)
     volt: (value) -> return parseInt(value)
-    current: (value) -> return parseInt(value)
+    rgbw: (value) -> return parseInt(value)
   }
 
   @_ENCODE: {
@@ -86,10 +90,10 @@ class Protocol extends events.EventEmitter
 
     set_level: (value) -> return Math.round(value * 15 / 100).toString() # 0-100 % -> 0-15
     temp: (value) -> # celcius
-      result = value.toString(16)
-      if result >= 32768
-        result = 32768 - result
-      return result / 10.0
+      result = value * 10
+      if result < 0
+        result += 32768
+      return result.toString(16)
     hum: (value) -> return value.toString() # 0-100 %
     baro: (value) -> return value.toString(16)
     hstatus: (value) -> return value.toString() # 0=Normal, 1=Comfortable, 2=Dry, 3=Wet
@@ -97,25 +101,29 @@ class Protocol extends events.EventEmitter
     uv: (value) -> return value.toString(16)
     lux: (value) -> return value.toString(16)
     bat: (value) -> return value # OK/LOW
-    rain: (value) -> return value.toString(16) # mm
-    raintot: (value) -> return value.toString(16) # mm
+    rain: (value) -> return parseInt(value * 10).toString(16) # mm
+    rainrate: (value) -> return parseInt(value * 10).toString(16) # mm
+    raintot: (value) -> return parseInt(value * 10).toString(16) # mm
     winsp: (value) -> return parseInt(value * 10).toString(16) # km. p/h
     awinsp: (value) -> return parseInt(value * 10).toString(16) # km. p/h
     wings: (value) -> return value.toString(16) # km. p/h
-    windir: (value) -> return parseInt(value * 15 / 100).toString() # 0-360 degrees
-    winchl: (value) -> return value.toString(16)
-    wintmp: (value) -> return value.toString(16)
+    windir: (value) -> return parseInt(value * 15 / 360).toString() # 0-360 degrees
+    winchl: (value) -> return @_ENCODE.temp(value)
+    wintmp: (value) -> return @_ENCODE.temp(value)
     chime: (value) -> return value.toString()
     smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
     co2: (value) -> return value.toString()
     sound: (value) -> return value.toString()
-    kwatt: (value) -> return value.toString()
-    watt: (value) -> return value.toString()
+    kwatt: (value) -> return value.toString(16)
+    watt: (value) -> return value.toString(16)
+    current: (value) -> return value.toString()
+    current2: (value) -> return value.toString()
+    current3: (value) -> return value.toString()
     dist: (value) -> return value.toString()
     meter: (value) -> return value.toString()
     volt: (value) -> return value.toString()
-    current: (value) -> return value.toString()
+    rgbw: (value) -> return value.toString()
   }
 
 

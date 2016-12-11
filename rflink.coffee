@@ -339,6 +339,7 @@ module.exports = (env) ->
       @_lux = lastState?.lux?.value or 0
       @_bat = lastState?.bat?.value or ""
       @_rain = lastState?.rain?.value or 0
+      @_rainrate = lastState?.rainrate?.value or 0
       @_raintot = lastState?.raintot?.value or 0
       @_winsp = lastState?.winsp?.value or 0
       @_awinsp = lastState?.awinsp?.value or 0
@@ -350,10 +351,12 @@ module.exports = (env) ->
       @_sound = lastState?.sound?.value or 0
       @_kwatt = lastState?.kwatt?.value or 0
       @_watt = lastState?.watt?.value or 0
+      @_current = lastState?.current?.value or 0
+      @_current2 = lastState?.current2?.value or 0
+      @_current3 = lastState?.current3?.value or 0
       @_dist = lastState?.dist?.value or 0
       @_meter = lastState?.meter?.value or 0
       @_volt = lastState?.volt?.value or 0
-      @_current = lastState?.current?.value or 0
 
       @attributes = {}
 
@@ -431,10 +434,18 @@ module.exports = (env) ->
                 unit: 'mm'
                 acronym: 'RAIN'
               }
+          when "rainrate"
+            if !@attributes.rainrate?
+              @attributes.rainrate = {
+                description: "the measured rain rate"
+                type: "number"
+                unit: 'mm'
+                acronym: 'RAINR'
+              }
           when "raintot"
             if !@attributes.raintot?
               @attributes.raintot = {
-                description: "the measured total rain rate"
+                description: "the measured total rain per 24 hours"
                 type: "number"
                 unit: 'mm'
                 acronym: 'RAINT'
@@ -519,6 +530,30 @@ module.exports = (env) ->
                 unit: 'W'
                 acronym: 'POWER'
               }
+          when "current"
+            if !@attributes.current?
+              @attributes.current = {
+                description: "Current phase 1"
+                type: "number"
+                unit: 'A'
+                acronym: 'I'
+              }
+          when "current2"
+            if !@attributes.current2?
+              @attributes.current2 = {
+                description: "Current phase 2"
+                type: "number"
+                unit: 'A'
+                acronym: 'I2'
+              }
+          when "current3"
+            if !@attributes.current3?
+              @attributes.current3 = {
+                description: "Current phase 3"
+                type: "number"
+                unit: 'A'
+                acronym: 'I3'
+              }
           when "dist"
             if !@attributes.dist?
               @attributes.dist = {
@@ -542,14 +577,6 @@ module.exports = (env) ->
                 type: "number"
                 unit: 'V'
                 acronym: 'U'
-              }
-          when "current"
-            if !@attributes.current?
-              @attributes.current = {
-                description: "the measured current value"
-                type: "number"
-                unit: 'A'
-                acronym: 'I'
               }
           else
             throw new Error(
@@ -587,6 +614,9 @@ module.exports = (env) ->
             if event.rain?
               @_rain = event.rain
               @emit "rain", @_rain
+            if event.rainrate?
+              @_rain = event.rainrate
+              @emit "rainrate", @_rainrate
             if event.raintot?
               @_raintot = event.raintot
               @emit "raintot", @_raintot
@@ -620,6 +650,15 @@ module.exports = (env) ->
             if event.watt?
               @_watt = event.watt
               @emit "watt", @_watt
+            if event.current?
+              @_current = event.current
+              @emit "current", @_current
+            if event.current2?
+              @_current2 = event.current2
+              @emit "current2", @_current2
+            if event.current3?
+              @_current3 = event.current3
+              @emit "current3", @_current3
             if event.dist?
               @_dist = event.dist
               @emit "dist", @_dist
@@ -629,9 +668,6 @@ module.exports = (env) ->
             if event.volt?
               @_volt = event.volt
               @emit "volt", @_volt
-            if event.current?
-              @_current = event.current
-              @emit "current", @_current
       )
       super()
 
@@ -644,6 +680,7 @@ module.exports = (env) ->
     getLux: -> Promise.resolve @_lux
     getBat: -> Promise.resolve @_bat
     getRain: -> Promise.resolve @_rain
+    getRainrate: -> Promise.resolve @_rainrate
     getRaintot: -> Promise.resolve @_raintot
     getWinsp: -> Promise.resolve @_winsp
     getAwinsp: -> Promise.resolve @_awinsp
@@ -655,10 +692,12 @@ module.exports = (env) ->
     getSound: -> Promise.resolve @_sound
     getKwatt: -> Promise.resolve @_kwatt
     getWatt: -> Promise.resolve @_watt
+    getCurrent: -> Promise.resolve @_current
+    getCurrent2: -> Promise.resolve @_current2
+    getCurrent3: -> Promise.resolve @_current3
     getDist: -> Promise.resolve @_dist
     getMeter: -> Promise.resolve @_meter
     getVolt: -> Promise.resolve @_volt
-    getCurrent: -> Promise.resolve @_current
 
 
 #  class RFLinkGenericSensor extends env.devices.Sensor
