@@ -50,8 +50,8 @@ class Protocol extends events.EventEmitter
     awinsp: (value) -> return parseInt(value, 16) / 10.0 # km. p/h
     wings: (value) -> return parseInt(value, 16) # km. p/h
     windir: (value) -> return parseInt(value) * 360 / 15.0 # 0-360 degrees
-    winchl: (value) -> return Protocol._DECODE[temp](value) # celcius
-    wintmp: (value) -> return Protocol._DECODE[temp](value) # celcius
+    winchl: (value) -> return Protocol._DECODE.temp(value) # celcius
+    wintmp: (value) -> return Protocol._DECODE.temp(value) # celcius
     chime: (value) -> return parseInt(value)
     smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
@@ -108,8 +108,8 @@ class Protocol extends events.EventEmitter
     awinsp: (value) -> return parseInt(value * 10).toString(16) # km. p/h
     wings: (value) -> return value.toString(16) # km. p/h
     windir: (value) -> return parseInt(value * 15 / 360).toString() # 0-360 degrees
-    winchl: (value) -> return Protocol._ENCODE[temp](value)
-    wintmp: (value) -> return Protocol._ENCODE[temp](value)
+    winchl: (value) -> return Protocol._ENCODE.temp(value)
+    wintmp: (value) -> return Protocol._ENCODE.temp(value)
     chime: (value) -> return value.toString()
     smokealert: (value) -> return value # ON/OFF
     pir: (value) -> return value # ON/OFF
