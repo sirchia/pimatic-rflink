@@ -10,7 +10,7 @@
     "rflink-config-schema.coffee",
     "device-config-schema.coffee"
   ],
-  "version": "0.7.0",
+  "version": "0.7.1",
   "license": "GPL-2.0",
   "homepage": "http://pimatic.org",
   "repository": {
